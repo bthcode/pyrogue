@@ -155,7 +155,7 @@ class Level(object):
             y = irand(1, self.level_height - h - 1)
             free = self.area_free(x, y, w, h)
             if STEP:
-                print "Free is: %s" % free
+                print ("Free is: %s" % free)
             if free:
                 # The area is free; dig out the room:
                 for i in range(w):
@@ -266,10 +266,10 @@ class Level(object):
                         self.data[j][i] = WALL
 
     def display(self):
-        print "-" * 78
+        print ("-" * 78) 
         for line in self.data:
-            print ''.join(line)
-        print "-" * 78
+            print (''.join(line))
+        print ("-" * 78)
     def generate(self):
         "Add rooms, passages, doors, etc"
         while self.add_room():
