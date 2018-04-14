@@ -31,7 +31,7 @@ class Pyro(object):
             while True:
                 self.game.Update()
         except GameOver:
-            Global.IO.DisplayText("Goodbye.", c_yellow)
+            #Global.IO.DisplayText("Goodbye.", c_yellow)
             log("Game ended normally.")
     def Save(self, savefile):
         Global.IO.DisplayText("Saving to file {0}".format(savefile))

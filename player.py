@@ -136,8 +136,8 @@ class PlayerCharacter(creatures.Humanoid):
         Global.IO.Message(lang.msg_resting, nowait=True)
     def BeginAutoRun(self):
         "Move in the given direction until something interesting happens."
-        dir, dx, dy = Global.IO.GetDirection()
-        if dir is None:
+        mdir, dx, dy = Global.IO.GetDirection()
+        if mdir is None:
             return False
         if dx == dy == 0:
             self.BeginAutoRest()
@@ -423,7 +423,7 @@ class PlayerCharacter(creatures.Humanoid):
         self.commands.append(Command(lang.cmdname_read, "r", self.Read))
         self.commands.append(Command(lang.cmdname_targetnext, 9, self.TabTarget))
         self.commands.append(Command(lang.cmdname_untarget, "T", self.UnTarget))
-        self.commands.append(Command(lang.cmdname_autorun, '/', self.BeginAutoRun))
+        self.commands.append(Command(lang.cmdname_autorun, '.', self.BeginAutoRun))
         self.commands.append(Command(lang.cmdname_autorest, 'R', self.BeginAutoRest))
         self.commands.append(Command(lang.cmdname_examine, 'x', self.ExamineItem))
         self.commands.append(Command(lang.cmdname_openclosedoor, 'o', self.OpenCloseDoor))
@@ -591,17 +591,12 @@ class PlayerCharacter(creatures.Humanoid):
             k = Global.IO.GetKey()
             Global.IO.BeginTurn()
             self.tab_targeting = False
-            if k == curses.KEY_DOWN:
-                self.Walk(0,1)
-            elif k == curses.KEY_RIGHT:
-                self.Walk(1,0)
-            elif k == curses.KEY_LEFT:
-                self.Walk(-1,0)
-            elif k == curses.KEY_UP:
-                self.Walk(0,-1)
-            elif k == s:
+            if k == s:
                 self.SaveGame()
-            if 48 < k < 58:
+            elif k in arrow_offsets:
+                dx, dy = arrow_offsets[k]
+                self.Walk(dx, dy)
+            elif 48 < k < 58:
                 # Movement key:
                 dx, dy = offsets[k-49]
                 self.Walk(dx, dy)

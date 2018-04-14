@@ -357,6 +357,10 @@ class IOWrapper(object):
                 dx, dy = offsets[k-49]
                 r = k, dx, dy
                 break
+            elif k in arrow_offsets:
+                dx, dy = arrow_offsets[k]
+                r = k, dx, dy
+                break
             elif chr(k) in vi_offsets:
                 dx, dy = vi_offsets[chr(k)]
                 r = k, dx, dy

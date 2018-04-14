@@ -112,6 +112,13 @@ vi_offsets = {
     'n' : ( 1, 1),
     '.' : ( 0, 0),
 } 
+
+arrow_offsets = {
+    curses.KEY_DOWN  : ( 0, 1),
+    curses.KEY_RIGHT : ( 1, 0),
+    curses.KEY_LEFT  : (-1, 0),
+    curses.KEY_UP    : ( 0, -1),
+}
 ####################### CLASS DEFINITIONS #######################
 
 class Logger(object):
