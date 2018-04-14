@@ -21,19 +21,45 @@ import pickle
 ####################### CLASS DEFINITIONS #######################
 
 class Pyro(object):
-    "Main class in charge of running the game."
+    """
+    Main class in charge of running the game.
+
+    Attributes
+    ----------
+    game: An instance of the Game class
+
+
+    """
     def __init__(self):
-        # Start a new game:
+        '''Start a new game.
+        '''
         self.game = Game()
+
     def Run(self):
+        '''
+        Main while loop running the game 
+        '''
         Global.IO.ClearScreen()
         try:
             while True:
                 self.game.Update()
         except GameOver:
-            #Global.IO.DisplayText("Goodbye.", c_yellow)
             log("Game ended normally.")
+
     def Save(self, savefile):
+        '''
+        Saves to a pickle file
+
+        Parameters
+        ----------
+        savefile: string
+            File Name
+
+        Returns
+        -------
+        None 
+        '''
+
         Global.IO.DisplayText("Saving to file {0}".format(savefile))
         pickle.dump(self, open(savefile, 'wb'))
         
@@ -56,6 +82,8 @@ class Game(object):
 ############################ MAIN ###############################
 
 def StartGame():
+    ''' Start a new game
+    '''
     # Initialize the IO wrapper:
     Global.IO = io.IOWrapper()
     try:
@@ -66,6 +94,8 @@ def StartGame():
         Global.IO.Shutdown()
 
 def LoadGame(savefile):
+    ''' Load a game from a pickle file
+    '''
     try:
         p = pickle.load(open(savefile, 'rb'))
     except pickle.UnpicklingError:
