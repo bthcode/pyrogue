@@ -194,7 +194,7 @@ class IOWrapper(object):
             else:
                 self.screen.addstr_color(11 + y - 22, 40, cstr)
             y += 1
-        for line in xrange(len(L)):
+        for line in range(len(L)):
             self.screen.addstr_color(line+1, 44, L[line], c_yellow)
         self.screen.addstr(self.height-1, 0, lang.prompt_any_key.center(self.width-1), hattr)
         self.GetKey()
@@ -419,7 +419,7 @@ class IOWrapper(object):
             k, Global.KeyBuffer = Global.KeyBuffer[0], Global.KeyBuffer[1:]
             return ord(k)
         k = 0
-        while not 0 < k < 256:
+        while not 0 < k < 512:
             k = self.screen.getch()
         if WINDOWS or k != 27:
             return k
@@ -639,7 +639,7 @@ class IOWrapper(object):
         max_y = 0
         for i in range(num):
             if doublewide:
-                max_item_width = (self.width - x) / 2 - 4
+                max_item_width = int((self.width - x) / 2 - 4)
                 if i < num / 2 + num % 2:
                     # left side
                     X = x
@@ -652,8 +652,8 @@ class IOWrapper(object):
                 max_item_width = self.width - x - 4
                 X = x
                 Y = y + i
-            self.screen.addstr(Y, X, letters[i], key_attr)
-            self.screen.addstr(Y, X+1, " - %s" % items[i][:max_item_width], attr)
+            self.screen.addstr(int(Y), int(X), letters[i], key_attr)
+            self.screen.addstr(int(Y), int(X)+1, " - %s" % items[i][:max_item_width], attr)
             max_y = max(max_y, Y)
         self.screen.addstr(max_y+1, x, prompt, prompt_attr)
         while True:
@@ -674,7 +674,7 @@ class IOWrapper(object):
             self.message_log = self.message_log[-MESSAGE_LOG_SIZE:]
     def MessageLog(self):
         self.screen.clear()
-        for i in xrange(1, min(len(self.message_log)+1, self.height)):
+        for i in range(1, min(len(self.message_log)+1, self.height)):
             msg, attr = self.message_log[-i]
             self.screen.addstr_color(self.height - i - 1, 0, msg, attr)
         self.screen.addstr_color(self.height-1, 0, lang.prompt_any_key, c_Yellow)
@@ -845,8 +845,8 @@ class OptimizedScreen(object):
         return y
     def clear(self):
         self.dattr = self.colors[0]
-        self.chars = [[" "] * self.width for i in xrange(self.height)]
-        self.attrs = [[self.colors[0]] * self.width for i in xrange(self.height)]
+        self.chars = [[" "] * self.width for i in range(self.height)]
+        self.attrs = [[self.colors[0]] * self.width for i in range(self.height)]
         self.cursor = [0, 0]
         self.screen.clear()
         self.screen.refresh()
