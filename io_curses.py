@@ -17,6 +17,8 @@ try:
 except AttributeError:
     pass
 
+ESC = 27
+SPC = 32
 
 tiles = {
     # Terrain/features:
@@ -359,7 +361,7 @@ class IOWrapper(object):
                 dx, dy = vi_offsets[chr(k)]
                 r = k, dx, dy
                 break
-            elif k == 32:
+            elif k in [ SPC, ESC ]:
                 r = None, None, None
                 break
         self.screen.addstr(0, 0, " " * self.width)
@@ -393,7 +395,7 @@ class IOWrapper(object):
                 need_refresh = False
                 # TODO: need_refresh is no longer meaningful
             k = self.GetKey()
-            if k == 32:
+            if k in [ SPC, ESC ]:
                 item = None     # Cancelled by user; return None.
                 break
             if k == 47 and not notoggle:    # "/"
@@ -421,15 +423,7 @@ class IOWrapper(object):
         k = 0
         while not 0 < k < 512:
             k = self.screen.getch()
-        if WINDOWS or k != 27:
             return k
-        else:
-            k = self.screen.getch()
-            if k != 79:
-                raise ValueError("Unexpected escape sequence (27, %s)" % k)
-            else:
-                k = self.screen.getch()
-                return k - 64
     def GetLocation(self, prompt=lang.prompt_choose_location):
         "Ask the player to specify a square in the current level."
         x, y = Global.pc.x, Global.pc.y
@@ -443,7 +437,7 @@ class IOWrapper(object):
                 dx, dy = offsets[k-49]
             elif chr(k) in vi_offsets:
                 dx, dy = vi_offsets[chr(k)]
-            elif k == 32:
+            elif k in [SPC,ESC]:
                 r = None, None
                 break
             elif k in (10, 13):
@@ -590,7 +584,7 @@ class IOWrapper(object):
                 dx, dy = offsets[k-49]
             elif chr(k) in vi_offsets:
                 dx, dy = vi_offsets[chr(k)]
-            elif k == 32:
+            elif k in [SPC,ESC]:
                 # Space to cancel:
                 mob = None
                 for i, j in path:
