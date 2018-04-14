@@ -12,6 +12,11 @@ import player
 import dungeons
 import io_curses as io
 
+import os
+import sys
+import argparse
+import pickle
+
 
 ####################### CLASS DEFINITIONS #######################
 
@@ -26,9 +31,12 @@ class Pyro(object):
             while True:
                 self.game.Update()
         except GameOver:
-            Global.IO.DisplayText("Game over.  Character dump will go here when implemented.",
-                                  c_yellow)
+            Global.IO.DisplayText("Goodbye.", c_yellow)
             log("Game ended normally.")
+    def Save(self, savefile):
+        Global.IO.DisplayText("Saving to file {0}".format(savefile))
+        pickle.dump(self, open(savefile, 'wb'))
+        
         
 class Game(object):
     "Holds all game data; pickling this should be sufficient to save the game."
@@ -57,5 +65,30 @@ def StartGame():
     finally:
         Global.IO.Shutdown()
 
+def LoadGame(savefile):
+    try:
+        p = pickle.load(open(savefile, 'rb'))
+    except pickle.UnpicklingError:
+        print ("ERROR: Can't understand savefile: {0}".format(savefile))
+        sys.exit(1)
+
+    Global.IO = io.IOWrapper()
+    try:
+        Global.pyro = p
+        Global.pc   = p.game.pc
+        Global.pyro.Run()
+    finally:
+        Global.IO.Shutdown() 
+# end LoadGame
+
 if __name__ == "__main__":
-    StartGame()
+    parser = argparse.ArgumentParser('')
+    parser.add_argument('-s', '--savefile', type=str)
+    args = parser.parse_args()
+    if args.savefile:
+        if not os.path.exists(args.savefile):
+            print ("ERROR: Can't find savefile: {0}".format(args.savefile))
+            sys.exit(1)
+        LoadGame(args.savefile)
+    else:
+        StartGame()

@@ -68,6 +68,9 @@ class English(object):
     cmdname_untarget = "Forget current target"
     cmdname_unwear = "Unequip an item"
     cmdname_wear = "Wear or wield an item"
+    cmdname_save = "Save Game"
+
+    saving_game = "Saving Game To: {0}"
 
     combat_mob_hit_mob = "%s %s %s."  # ("The kobold"[attacker], "slashes", "the kobold"[target])
                                       # I only include this in case the order needs to change!
@@ -282,6 +285,7 @@ class English(object):
     prompt_player_race = "Choose your race, %s:"  # (John)
     prompt_quaff = "Quaff which potion?"
     prompt_quit = "Really quit the game?"
+    prompt_save = "Save game?"
     prompt_read = "Read which scroll?"
     prompt_remove_which = "Remove which item?"
     prompt_unwear = "Unequip which item?"

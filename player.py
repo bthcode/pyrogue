@@ -58,6 +58,7 @@ class PlayerCharacter(creatures.Humanoid):
         self.old_fov, self.new_fov = set(), set()
         self.target = None
         self.current_level = None
+
     def AdjacentPassableSquares(self):
         "Return a list of adjacent squares the player can move into."
         adj = []
@@ -175,7 +176,7 @@ class PlayerCharacter(creatures.Humanoid):
             else:
                 Global.IO.Message("You are once again subject to death.")
         def cheat_items():
-            for i in xrange(20):
+            for i in range(20):
                 while True:
                     dx, dy = irand(-3, 3), irand(-3, 3)
                     if dx*dx + dy*dy < 16: break
@@ -263,7 +264,10 @@ class PlayerCharacter(creatures.Humanoid):
             Global.IO.Message(msg)
             return success
     def EndGame(self):
-        if Global.IO.YesNo(lang.prompt_quit):
+        if Global.IO.YesNo(lang.prompt_save):
+            self.SaveGame()
+            raise GameOver
+        elif Global.IO.YesNo(lang.prompt_quit):
             raise GameOver
     def EquippedInventory(self):
         Global.IO.DisplayInventory(self, equipped=True)
@@ -430,6 +434,7 @@ class PlayerCharacter(creatures.Humanoid):
         self.commands.append(Command(lang.cmdname_help, '?', self.CommandList))
         self.commands.append(Command(lang.cmdname_quit, 'Q', self.EndGame))
         self.commands.append(Command(lang.cmdname_cheat, 'C', self.Cheat))
+        self.commands.append(Command(lang.cmdname_save, 's', self.SaveGame))
     def Inventory(self):
         Global.IO.DisplayInventory(self)
         Global.IO.GetKey()
@@ -525,6 +530,10 @@ class PlayerCharacter(creatures.Humanoid):
         pass
     def UnTarget(self):
         self.target = None
+    def SaveGame(self):
+        Global.IO.Message(lang.saving_game.format(self.name + '.pkl'))
+        # How do I make a call to pyro from here?  
+        Global.pyro.Save(self.name + '.pkl')
     def Update(self):
         "Called each turn; get the player's action and execute it."
         self.UpdateEffects()
@@ -552,8 +561,8 @@ class PlayerCharacter(creatures.Humanoid):
             if mob not in (None, self) and distance_squared <= (mob.vision_radius + 0.5) ** 2:
                 mob.can_see_pc = True
         if self.omniscient:
-            for i in xrange(self.current_level.width):
-                for j in xrange(self.current_level.height):
+            for i in range(self.current_level.width):
+                for j in range(self.current_level.height):
                     self.new_fov.add((i, j))
         self.current_level.fov.UnlightAll()
         for s in self.new_fov:
@@ -582,6 +591,16 @@ class PlayerCharacter(creatures.Humanoid):
             k = Global.IO.GetKey()
             Global.IO.BeginTurn()
             self.tab_targeting = False
+            if k == curses.KEY_DOWN:
+                self.Walk(0,1)
+            elif k == curses.KEY_RIGHT:
+                self.Walk(1,0)
+            elif k == curses.KEY_LEFT:
+                self.Walk(-1,0)
+            elif k == curses.KEY_UP:
+                self.Walk(0,-1)
+            elif k == s:
+                self.SaveGame()
             if 48 < k < 58:
                 # Movement key:
                 dx, dy = offsets[k-49]
