@@ -213,6 +213,19 @@ class Level(object):
                 and not self.FeatureAt(x, y)
                 and not self.CreatureAt(x, y)
                 and not self.ItemsAt(x, y))
+    def GetCoordsNear(self, x, y):
+        r = 1
+        while True:
+            for i in range(x-r,x+r):
+                for j in range(y-r, y+r):
+                    if i < 0 or i > self.width:
+                        continue
+                    if j < 0 or j > self.height:
+                        continue
+                    if self.IsEmpty(i,j):
+                        return i,j
+            r += 1
+            
     def ItemsAt(self, x, y):
         "Return a list of items at x, y."
         return self.items.get((x, y), [])

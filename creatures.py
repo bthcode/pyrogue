@@ -129,6 +129,7 @@ class Creature(object):
         self.cast_speed = 100
         self.hp = self.hp_max
         self.kill_xp = int(max(self.level+1, 1.5 ** self.level))
+        log('name={1}, xp: {0}'.format(self.kill_xp, self.name))
         if not self.is_pc:
             # For now, have every mob drop a level-appropriate item:
             self.inventory.Pickup(items.random_item(int_range(self.level, self.level/4.0, 2)))
@@ -563,6 +564,19 @@ class Rat(Rodent):
         [Bite("1d3", 100), 1],
     ]
     desc = lang.mob_desc_rat
+
+class GreaterRat(Rodent):
+    name = lang.mob_name_greater_rat
+    color = c_green
+    hp_max = 15
+    dex, str = 8, 10
+    level = 2
+    attacks = [
+        [Claw("1d4", 100), 2],
+        [Bite("1d5", 100), 1],
+    ]
+    desc = lang.mob_desc_greater_rat
+ 
     
 class WimpyKobold(Kobold):
     name = lang.mob_name_kobold
@@ -635,10 +649,10 @@ class Ogre(Humanoid):
     attacks = [[items.Punch("1d3", 80), 1]]
     desc = lang.mob_desc_ogre
     
-all = [Rat, WimpyKobold, WimpyGoblin, Wolf, Imp, Ogre]
+all_creatures = [Rat, GreaterRat,  WimpyKobold, WimpyGoblin, Wolf, Imp, Ogre]
 
 def RandomMob(level):
     "Create and return a mob appropriate to the given dungeon level."
-    mobs = [(mob, mob.rarity) for mob in all if -1 <= level - mob.level <= 1]
+    mobs = [(mob, mob.rarity) for mob in all_creatures if -1 <= level - mob.level <= 1]
     mob = weighted_choice(mobs)
     return mob()

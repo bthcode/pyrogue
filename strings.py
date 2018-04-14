@@ -236,6 +236,7 @@ class English(object):
     mob_desc_kobold = "Kobolds are a vile race of dimunitive lizard-men with mottled brownish-green scaly skin, dozens of small, sharp teeth.  They are not known for their intellectual or physical prowess, although in groups they can be dangerous (mostly due to their obnoxious odor)."
     mob_desc_ogre = "Ogres are gigantic humanoids, seven to nine feet tall and weighing up to eight hundred pounds.  Muscular and fat in roughly equal measure, they are deadly opponents in combat.  Luckily, they are rather slow."
     mob_desc_rat = "This rodent is definitely of an unusual size--you estimate it weighs at least twenty pounds.  Its red eyes stare at you with no trace of fear."
+    mob_desc_greater_rat = "Bigger and meaner than the rat.  This rat is big, mean, and fast."
     mob_desc_wolf = "Your generic two-hundred-pound wolf.  Don't run; he can smell fear, and he's faster than you."
 
     mob_name_goblin = "goblin"
@@ -243,6 +244,7 @@ class English(object):
     mob_name_kobold = "kobold"
     mob_name_ogre = "ogre"
     mob_name_rat = "rat"
+    mob_name_greater_rat = "greater rat"
     mob_name_wolf = "wolf"
     
     mob_drinks = "%s drinks %s."  # ("The kobold", "a potion of might")

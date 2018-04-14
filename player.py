@@ -1,6 +1,7 @@
 "player.py - Player character module for Pyro"
 
 
+import pprint
 from util import *
 import creatures
 import items
@@ -213,6 +214,18 @@ class PlayerCharacter(creatures.Humanoid):
             for s in self.current_level.fov.Ball(self.x, self.y, 4, ignore_walls=True):
                 self.current_level.layout.data[s[1]][s[0]] = "."
                 self.current_level.Dirty(*s)
+        def cheat_summon_monster():
+            monster = Global.IO.GetMonsterChoice("Monster:")
+            Global.IO.Message("You asked for a {0}".format(monster))
+            monster_list = [ x.__name__ for x in creatures.all_creatures ]
+            if monster not in monster_list:
+                Global.IO.Message('Please choose from {0}'.format(pprint.pformat(monster_list)))
+            else:
+                x,y = self.current_level.GetCoordsNear(self.x, self.y)
+                Global.IO.Message("Creating a {0} at {1}, {2}".format(monster, x, y)) 
+                #m = creatures.Rat() #globals()['creatures.{0}'.format(monster)](self.current_level.depth)
+                m = getattr(creatures, monster)()
+                self.current_level.AddCreature(m, x, y)
         def cheat_test():
             magic.MagicMissile().Cast(self)
         cheats = [
@@ -228,6 +241,7 @@ class PlayerCharacter(creatures.Humanoid):
             Cheat("Toggle free motion", "", cheat_free_motion),
             Cheat("Clear nearby walls", "", cheat_clearout),
             Cheat("Target test", "", cheat_test),
+            Cheat("Summon monster", "", cheat_summon_monster),
         ]
         cheat = Global.IO.GetChoice(cheats, "Cheat how?", nocancel=False)
         if cheat is not None:

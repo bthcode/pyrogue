@@ -451,6 +451,11 @@ class IOWrapper(object):
             y = max(0, min(y+dy, Global.pc.current_level.height-1))
         self.screen.addstr(0, 0, " " * self.width)
         return r
+    def GetMonsterChoice(self, prompt):
+        monster = Global.IO.GetString(prompt,  noblank=True,
+                                        pattr=c_yellow, iattr=c_Yellow)
+        self.screen.clearline(0)
+        return monster
     def GetQuantity(self, max_qty=None, prompt="How many?"):
         if max_qty:
             range = "1-%s, " % max_qty
