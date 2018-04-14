@@ -78,6 +78,8 @@ class Item(object):
     thrown_damage = "1d2"
     def __init__(self):
         self.x, self.y, self.current_level = 0, 0, None
+    def __lt__(self, other):
+        return (self.name < other.name)
     def Duplicate(self):
         "Return an exact duplicate of this item."
         # Temporarily remove links that will cause deepcopy to choke:
@@ -579,7 +581,7 @@ def random_melee_weapon(level, w=None, nospecial=False):
             mod = -1
         else:
             mod = 1
-        for i in xrange(level-1):
+        for i in range(level-1):
             if rnd(0, 1) < 0.5:
                 w.hit_bonus += mod
             else:

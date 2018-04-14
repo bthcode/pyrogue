@@ -21,9 +21,9 @@ class FOVMap(object):
         self.lit_now, self.was_lit = {}, {}
         # precalculate an octant's worth of l_slopes and r_slopes:
         self.slopes = []
-        for j in xrange(82):
+        for j in range(82):
             self.slopes.append([])
-            for i in xrange(j+2):
+            for i in range(j+2):
                 l_slope = (i+0.5) / (j-0.5)
                 r_slope = (i-0.5) / (j+0.5)
                 self.slopes[j].append((l_slope, r_slope))
@@ -33,8 +33,8 @@ class FOVMap(object):
             f = {}
             sx, ex = max(0, x-radius), min(self.width-1, x+radius)
             sy, ey = max(0, y-radius), min(self.height-1, y+radius)
-            for i in xrange(sx, ex+1):
-                for j in xrange(sy, ey+1):
+            for i in range(sx, ex+1):
+                for j in range(sy, ey+1):
                     if (x - i) ** 2 + (y - j) ** 2 <= radius_squared:
                         f[(i, j)] = True
             return f.keys()
@@ -46,7 +46,7 @@ class FOVMap(object):
         radius_squared = (radius+0.5)**2
         while casts:
             (row, start, end), casts = casts
-            for j in xrange(row, radius+1):
+            for j in range(row, radius+1):
                 dx = 1
                 radius_test = radius_squared - j*j
                 blocked = False
@@ -92,7 +92,7 @@ class FOVMap(object):
         "Return a list of squares that are in view from (x, y) within the given radius."
         self.fov_list = {}
         self.fov_list[(x, y)] = True
-        for oct in xrange(8):
+        for oct in range(8):
             self.cast_fov(x, y, 1, 0.0, 1.0, radius, 
                           self.mult[0][oct], self.mult[1][oct],
                           self.mult[2][oct], self.mult[3][oct])
@@ -133,7 +133,7 @@ class FOVMap(object):
                     oct = 5
         return oct
     def Lit(self, x, y):
-        return self.lit_now.has_key((x, y))
+        return (x,y) in self.lit_now
     def LOSExists(self, x1, y1, x2, y2):
         "Return whether a line of sight exists between (x1, y1) and (x2, y2)."
         # We'll do this by doing the normal light casting, centered at (x1, y1),

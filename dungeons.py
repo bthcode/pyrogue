@@ -73,8 +73,8 @@ class Level(object):
                  if not(self.depth==1 and room==self.up_room)]
         for (x, y, w, h) in rooms:
             mobs = d("3d2-3")
-            for m in xrange(mobs):
-                for n in xrange(5): # Try at most 5 times to find a spot: TODO: ugly
+            for m in range(mobs):
+                for n in range(5): # Try at most 5 times to find a spot: TODO: ugly
                     i, j = irand(x, x+w-1), irand(y, y+h-1)
                     if not (self.CreatureAt(i, j) or self.FeatureAt(i, j)):
                         mob = creatures.RandomMob(self.depth)
@@ -85,7 +85,7 @@ class Level(object):
     def AddCreature(self, mob, x, y):
         "Add a mob to the level at position x, y."
         # Make sure the space isn't already occupied by a mob:
-        assert not self.creatures.has_key((x, y))  # Can't stack mobs.
+        assert not (x,y) in self.creatures  # Can't stack mobs.
         self.creatures[(x, y)] = mob
         mob.x, mob.y, mob.current_level = x, y, self
         if len(self.mob_actions) > 0:
@@ -97,7 +97,7 @@ class Level(object):
         self.Dirty(x, y)
     def AddFeature(self, feature, x, y):
         "Add a feature to the level at position x, y."
-        assert not self.features.has_key((x, y))  # Can't stack features.
+        assert not (x,y) in self.features  # Can't stack features.
         self.features[(x, y)] = feature
         feature.x, feature.y, feature.current_level = x, y, self
         self.Dirty(x, y)
@@ -107,7 +107,7 @@ class Level(object):
             # Randomly place it somewhere in the level:
             x, y = self.RandomSquare()
             self.items.append(item)
-        if self.items.has_key((x, y)):
+        if (x,y) in self.items:
             # See if there's a stack of this item already; if so, add it:
             for existing_item in self.items[(x, y)]:
                 if item.StacksWith(existing_item):
@@ -124,7 +124,7 @@ class Level(object):
             self.Dirty(x, y)
     def PushItem(self, item, x, y):
         "Add the item at x, y, pushing existing item(s) out of the way."
-        if not self.items.has_key((x, y)):
+        if not (x,y) in self.items:
             # Nothing there; just place it:
             self.items[(x, y)] = [item]
             item.x, item.y, item.current_level = x, y, self
@@ -191,8 +191,8 @@ class Level(object):
         painted = 0
         if Global.FullDungeonRefresh:
             Global.FullDungeonRefresh = False
-            for x in xrange(self.width):
-                for y in xrange(self.height):
+            for x in range(self.width):
+                for y in range(self.height):
                     painted += 1
                     self.PaintSquare(x, y)
             log("Full dungeon repaint.")

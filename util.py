@@ -5,6 +5,7 @@ from random import choice, randint, uniform as rnd, normalvariate as norm, seed
 from math import ceil, sqrt
 from time import sleep
 from strings import lang
+from functools import reduce
 
 class GameOver(Exception): pass
 
@@ -187,7 +188,7 @@ def irand(a, b, n=1):
     if a > b:
         a, b = b, a
     t = 0
-    for i in xrange(n):
+    for i in range(n):
         t += randint(a, b)
     return int(round(t / n))
 
@@ -267,7 +268,7 @@ def successful_hit(differential, level=1):
 
 def clen(s):
     "Return the length of a string, excluding embedded color codes."
-    for c in msg_colors.keys() + ["0"]:
+    for c in list(msg_colors.keys()) + ["0"]:
         s = s.replace("^"+c+"^", "")
     return len(s)
 
@@ -287,7 +288,7 @@ def bresenham(x1, y1, x2, y2, initial_error=0):
     y = y1
     if y1 < y2: ystep = 1
     else: ystep = -1
-    for x in xrange(x1, x2+1):
+    for x in range(x1, x2+1):
         if steep: path.append((y, x))
         else: path.append((x, y))
         error += derror
@@ -350,7 +351,7 @@ def linear_path(x1, y1, x2, y2, blocked):
         if path_clear(path[1:-1], blocked):
             return path, True
         tune = max(abs(dx), abs(dy))
-        for error in xrange(1, tune):
+        for error in range(1, tune):
             path = bresenham(x1, y1, x2, y2, 0.5-float(error)/tune)
             if path_clear(path[1:-1], blocked):
                 return path, True
