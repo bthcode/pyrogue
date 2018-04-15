@@ -19,6 +19,7 @@ except AttributeError:
 
 ESC = 27
 SPC = 32
+DEL = 127
 
 tiles = {
     # Terrain/features:
@@ -528,7 +529,7 @@ class IOWrapper(object):
             k = self.GetKey()
             if chr(k) in mask:
                 str += chr(k)
-            elif k == 8:
+            elif k == 8 or k == curses.KEY_BACKSPACE or k == DEL:
                 # Backspace
                 str = str[:-1]
             elif k in (10, 13):
