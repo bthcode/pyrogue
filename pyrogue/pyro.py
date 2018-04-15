@@ -26,7 +26,7 @@ class Pyro(object):
 
     Attributes
     ----------
-    game: An instance of the Game class
+    game: An instance of :class:`Game`
 
 
     """
@@ -50,14 +50,11 @@ class Pyro(object):
         '''
         Saves to a pickle file
 
-        Parameters
-        ----------
-        savefile: string
-            File Name
+        Args: 
+            savefile (str): file to save to
 
-        Returns
-        -------
-        None 
+        Returns:    
+            None
         '''
 
         Global.IO.DisplayText("Saving to file {0}".format(savefile))
@@ -67,15 +64,11 @@ class Pyro(object):
 class Game(object):
     '''Holds all game data
     
-    Attributes
-    ----------
-    dungeon: An instance of the Dungeon class
-    current_level: An instance of the Level class
-    pc: An instance of a PlayerCharacter class
+    Attributes:
+        dungeon: An instance of :class:`pyrogue.dungeons.Dungeon`
+        current_level: An instance of :class:`pyrogue.dungeons.Level`
+        pc: An instance of :class:`pyrogue.player.PlayerCharacter`
 
-    Methods
-    -------
-    Update
     '''
     
     def __init__(self):

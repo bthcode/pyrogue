@@ -212,10 +212,11 @@ def wrap(text, width):
     """
     A word-wrap function that preserves existing line breaks
     and most spaces in the text. Expects that existing line
-    breaks are posix newlines (\n).
+    breaks are posix newlines (\\n).
     
     EDB: I didn't write this beast--I fear and respect it.
     """
+
     return reduce(lambda line, word, width=width: '%s%s%s' %
                   (line,
                    ' \n'[(len(line)-line.rfind('\n')-1

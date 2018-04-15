@@ -1,6 +1,7 @@
 "creatures.py - Pyro creatures"
 
 from util import *
+from pyro_items import MeleeAttackType
 import pyro_items
 import dungeons
 import astar

@@ -1,7 +1,7 @@
 "pyro_items.py - Pyro things and objects"
 
 from util import *
-import creatures
+#import creatures
 import magic
 
 types = [
