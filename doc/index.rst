@@ -4,7 +4,7 @@ Contents:
 .. toctree::
    :maxdepth: 4
 
-   modules
+   modules 
 
 Overview
 ========
@@ -12,8 +12,8 @@ Overview
 This is the pyrogue python-based roguelike game.  It is an 
 excellent starting place for learing to code roguelikes.
 
-Quick Overview
-==============
+Quick Grok
+==========
 
 - :class:`~pyrogue.pyro.Pyro` has a :class:`~pyrogue.pyro.Game`
 - :class:`~pyrogue.pyro.Game` has a 
@@ -24,9 +24,10 @@ Quick Overview
     - Inherit off :class:`~pyrogue.creatures.Creature`
     - Have an :class:`~pyrogue.creatures.AI` to guide them
     - Are placed in game by :attr:`~pyrogue.dungeons.Level.AddCreature`
-    - Have an :class:`~pyrogue.creatues.Iventory` 
+    - Have an :class:`~pyrogue.creatures.Iventory` 
+    - Use Astar to calculate paths: :class:`~pyrogue.astar.path` 
 - Player Character:
-    - Drives game play in method :attr:`~pyrogue.player.PlayerCharager.Update`
+    - Drives game play in method :attr:`~pyrogue.player.PlayerCharacter.Update`
 - Dungeon Level: :class:`~pyrogue.dungeons.Level`
     - Has a map stored in :attr:`~pyrogue.dungeons.Level.layout`
     - Stores data with (x,y) keys
