@@ -5,7 +5,7 @@
 
 from util import *
 import curses
-import items
+import pyro_items
 
 OPTIMIZE_OUTPUT = True      # Whether to buffer curses output (False won't work yet)
 MESSAGE_LINES = 2
@@ -265,9 +265,9 @@ class IOWrapper(object):
         self.screen.addstr(y, 0, "%s: %s" % (title, weight), hattr)
         y += 1
         if types == "":
-            display_types = items.types
+            display_types = pyro_items.types
         else:
-            display_types = [t for t in items.types if t[1] in types]
+            display_types = [t for t in pyro_items.types if t[1] in types]
         for type, symbol in display_types:
             itemlist = [i for i in mob.inventory.ItemsOfType(type)
                         if (equipped and i[0] in mob.equipped)

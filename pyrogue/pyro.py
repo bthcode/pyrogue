@@ -7,7 +7,7 @@ Pyro: PYthon ROguelike by Eric D. Burgess, 2006
 from util import *
 
 import creatures
-import items
+import pyro_items 
 import player
 import dungeons
 import io_curses as io
@@ -65,7 +65,19 @@ class Pyro(object):
         
         
 class Game(object):
-    "Holds all game data; pickling this should be sufficient to save the game."
+    '''Holds all game data
+    
+    Attributes
+    ----------
+    dungeon: An instance of the Dungeon class
+    current_level: An instance of the Level class
+    pc: An instance of a PlayerCharacter class
+
+    Methods
+    -------
+    Update
+    '''
+    
     def __init__(self):
         # Create the dungeon and the first level:
         self.dungeon = dungeons.Dungeon("Dingy Dungeon")

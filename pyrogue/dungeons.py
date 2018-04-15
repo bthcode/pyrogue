@@ -227,7 +227,7 @@ class Level(object):
             r += 1
             
     def ItemsAt(self, x, y):
-        "Return a list of items at x, y."
+        "Return a list of pyro_items at x, y."
         return self.items.get((x, y), [])
         #return [i for i in self.items if i.x == x and i.y == y]
     def MoveCreature(self, mob, new_x, new_y):
@@ -257,13 +257,13 @@ class Level(object):
             tile = "@"
             color = c_Magenta
         if self.fov.Lit(x, y):
-            # Currently visible; display items/mobs:
+            # Currently visible; display pyro_items/mobs:
             self.memento[y][x] = [tile, color]
             # Check for dungeon features:
             feature = self.FeatureAt(x, y)
             if feature:
                 tile, color = feature.tile, feature.color
-            # See if there are items:
+            # See if there are pyro_items:
             for item in self.ItemsAt(x, y):
                 tile, color = item.tile, item.color
             self.memento[y][x] = [tile, color]

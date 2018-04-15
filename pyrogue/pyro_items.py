@@ -1,4 +1,4 @@
-"items.py - Pyro items"
+"pyro_items.py - Pyro things and objects"
 
 from util import *
 import creatures

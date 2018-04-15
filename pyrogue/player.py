@@ -4,7 +4,7 @@
 import pprint
 from util import *
 import creatures
-import items
+import pyro_items
 import fov
 import dungeons
 import magic
@@ -16,7 +16,7 @@ class PlayerCharacter(creatures.Humanoid):
     can_open_doors = True
     is_pc = True
     AIType = None       # The player makes the calls
-    unarmed = items.Punch()
+    unarmed = pyro_items.Punch()
     xp_rate = 1.0   # 2.0 would need 2x the xp to level, 0.8 would need 20% less
     level, xp = 0, 0
     immortal = False
@@ -31,7 +31,7 @@ class PlayerCharacter(creatures.Humanoid):
         # Do generic humanoid creature initialization:
         creatures.Humanoid.__init__(self)
         # Set up bag-based inventory:
-        self.bag = items.SmallBag()
+        self.bag = pyro_items.SmallBag()
         self.inventory = PlayerInventory(self)
         # Initialize commands:
         self.InitCommands()
@@ -176,14 +176,14 @@ class PlayerCharacter(creatures.Humanoid):
                 Global.IO.Message("You are now immortal and cannot die.")
             else:
                 Global.IO.Message("You are once again subject to death.")
-        def cheat_items():
+        def cheat_pyro_items():
             for i in range(20):
                 while True:
                     dx, dy = irand(-3, 3), irand(-3, 3)
                     if dx*dx + dy*dy < 16: break
                 if self.current_level.IsEmpty(self.x+dx, self.y+dy):
                     lvl = int_range(15, 5, 2)
-                    self.current_level.AddItem(items.random_item(lvl), self.x+dx, self.y+dy)
+                    self.current_level.AddItem(pyro_items.random_item(lvl), self.x+dx, self.y+dy)
         def cheat_genocide():
             for c in self.current_level.creatures.values():
                 if c is not Global.pc:
@@ -233,7 +233,7 @@ class PlayerCharacter(creatures.Humanoid):
             Cheat("Toggle omniscience", "", cheat_omni), 
             Cheat("Gain a level", "", cheat_level),
             Cheat("Toggle immortality", "", cheat_immortal), 
-            Cheat("Items from heaven", "", cheat_items),
+            Cheat("Items from heaven", "", cheat_pyro_items),
             Cheat("Kill all mobs in level", "", cheat_genocide),
             Cheat("Stat gain", "", cheat_stat),
             Cheat("Teleport", "", cheat_teleport),
@@ -488,25 +488,25 @@ class PlayerCharacter(creatures.Humanoid):
                 else:
                     Global.IO.Message(lang.error_nothing_there_to_openclose)
     def Pickup(self):
-        "Pick up items(s) at the current position."
-        items = self.current_level.ItemsAt(self.x, self.y)
-        if len(items) == 0:
+        "Pick up pyro_items(s) at the current position."
+        pyro_items = self.current_level.ItemsAt(self.x, self.y)
+        if len(pyro_items) == 0:
             Global.IO.Message(lang.error_nothing_here_to_pickup)
             return False
-        elif len(items) == 1:
-            i = items[0]
+        elif len(pyro_items) == 1:
+            i = pyro_items[0]
             if i.quantity > 1:
                 qty = Global.IO.GetQuantity(i.quantity, lang.prompt_pickup_howmany % i.Name())
                 if qty is None:
                     return False
             else:
                 qty = 1
-            success, msg = self.inventory.Pickup(items[0], qty)
+            success, msg = self.inventory.Pickup(pyro_items[0], qty)
             Global.IO.Message(msg)
             return success
         else:
             any_success = False
-            for i in items:
+            for i in pyro_items:
                 if i.quantity > 1 or Global.IO.YesNo(lang.prompt_pickup % i.Name()):
                     if i.quantity > 1:
                         qty = Global.IO.GetQuantity(i.quantity, lang.prompt_pickup_howmany % i.Name())
@@ -748,7 +748,7 @@ class PlayerInventory(creatures.Inventory):
         return item.Weight() * self.mob.bag.reduction + self.TotalWeight() <= self.Capacity()
     def TotalWeight(self):
         eq = sum([i.Weight() for i in self.mob.equipped])
-        pack = sum([i[0].Weight() for i in self.items 
+        pack = sum([i[0].Weight() for i in self.items
                     if i[0] not in self.mob.equipped]) * self.mob.bag.reduction
         return eq + pack
         
@@ -767,8 +767,8 @@ class Archetype(object):
     def __init__(self, pc):
         self.pc = pc
         self.gain_str, self.gain_dex, self.gain_int, self.gain_any = 0, 0, 0, 0
-        # Starting items common to all archetypes:
-        pc.inventory.Pickup(items.MinorHealPotion())
+        # Starting pyro_items common to all archetypes:
+        pc.inventory.Pickup(pyro_items.MinorHealPotion())
     def GainLevel(self):
         pc = self.pc
         pc.level += 1
@@ -789,10 +789,10 @@ class KrolDwarf(Archetype):
     cname = lang.archname_kroldwarf_short
     desc = lang.archdesc_kroldwarf
     def __init__(self, pc):
-        armor = items.random_armor(-2, items.ChainShirt, nospecial=True)
+        armor = pyro_items.random_armor(-2, pyro_items.ChainShirt, nospecial=True)
         pc.inventory.Pickup(armor)
         pc.Equip(armor, silent=True)
-        weapon = items.random_melee_weapon(0, items.LongSword, nospecial=True)
+        weapon = pyro_items.random_melee_weapon(0, pyro_items.LongSword, nospecial=True)
         pc.inventory.Pickup(weapon)
         pc.Equip(weapon, silent=True)
         Archetype.__init__(self, pc)
@@ -803,10 +803,10 @@ class DisDwarf(Archetype):
     cname = lang.archname_disdwarf_short
     desc = lang.archdesc_disdwarf
     def __init__(self, pc):
-        armor = items.random_armor(-2, items.Jerkin, nospecial=True)
+        armor = pyro_items.random_armor(-2, pyro_items.Jerkin, nospecial=True)
         pc.inventory.Pickup(armor)
         pc.Equip(armor, silent=True)
-        weapon = items.random_melee_weapon(0, items.ShortSword, nospecial=True)
+        weapon = pyro_items.random_melee_weapon(0, pyro_items.ShortSword, nospecial=True)
         pc.inventory.Pickup(weapon)
         pc.Equip(weapon, silent=True)
         Archetype.__init__(self, pc)
@@ -817,10 +817,10 @@ class KrolElf(Archetype):
     cname = lang.archname_krolelf_short
     desc = lang.archdesc_krolelf
     def __init__(self, pc):
-        armor = items.random_armor(-2, items.Robe, nospecial=True)
+        armor = pyro_items.random_armor(-2, pyro_items.Robe, nospecial=True)
         pc.inventory.Pickup(armor)
         pc.Equip(armor, silent=True)
-        weapon = items.random_melee_weapon(0, items.Dagger, nospecial=True)
+        weapon = pyro_items.random_melee_weapon(0, pyro_items.Dagger, nospecial=True)
         pc.inventory.Pickup(weapon)
         pc.Equip(weapon, silent=True)
         Archetype.__init__(self, pc)
@@ -832,10 +832,10 @@ class DisElf(Archetype):
     cname = lang.archname_diself_short
     desc = lang.archdesc_diself
     def __init__(self, pc):
-        armor = items.random_armor(-2, items.Jerkin, nospecial=True)
+        armor = pyro_items.random_armor(-2, pyro_items.Jerkin, nospecial=True)
         pc.inventory.Pickup(armor)
         pc.Equip(armor, silent=True)
-        weapon = items.random_melee_weapon(0, items.Dagger, nospecial=True)
+        weapon = pyro_items.random_melee_weapon(0, pyro_items.Dagger, nospecial=True)
         pc.inventory.Pickup(weapon)
         pc.Equip(weapon, silent=True)
         Archetype.__init__(self, pc)
@@ -847,10 +847,10 @@ class KrolHuman(Archetype):
     cname = lang.archname_krolhuman_short
     desc = lang.archdesc_krolhuman
     def __init__(self, pc):
-        armor = items.random_armor(-2, items.Jerkin, nospecial=True)
+        armor = pyro_items.random_armor(-2, pyro_items.Jerkin, nospecial=True)
         pc.inventory.Pickup(armor)
         pc.Equip(armor, silent=True)
-        weapon = items.random_melee_weapon(0, items.BattleAxe, nospecial=True)
+        weapon = pyro_items.random_melee_weapon(0, pyro_items.BattleAxe, nospecial=True)
         pc.inventory.Pickup(weapon)
         pc.Equip(weapon, silent=True)
         Archetype.__init__(self, pc)
@@ -861,10 +861,10 @@ class DisHuman(Archetype):
     cname = lang.archname_dishuman_short
     desc = lang.archdesc_dishuman
     def __init__(self, pc):
-        armor = items.random_armor(-2, items.Jerkin, nospecial=True)
+        armor = pyro_items.random_armor(-2, pyro_items.Jerkin, nospecial=True)
         pc.inventory.Pickup(armor)
         pc.Equip(armor, silent=True)
-        weapon = items.random_melee_weapon(0, items.Dagger, nospecial=True)
+        weapon = pyro_items.random_melee_weapon(0, pyro_items.Dagger, nospecial=True)
         pc.inventory.Pickup(weapon)
         pc.Equip(weapon, silent=True)
         Archetype.__init__(self, pc)

@@ -1,16 +1,16 @@
 "creatures.py - Pyro creatures"
 
 from util import *
-import items
+import pyro_items
 import dungeons
 import astar
         
-class Bite(items.MeleeAttackType):
+class Bite(pyro_items.MeleeAttackType):
     name = "bite"
     verbs = lang.verbs_bite  # no damage, hit, crit
     verbs_sp = lang.verbs_bite_2p
     damage = "1d4"
-class Claw(items.MeleeAttackType):
+class Claw(pyro_items.MeleeAttackType):
     name = "claw"
     verbs = lang.verbs_claw
     verbs_sp = lang.verbs_claw_2p
@@ -132,7 +132,7 @@ class Creature(object):
         log('name={1}, xp: {0}'.format(self.kill_xp, self.name))
         if not self.is_pc:
             # For now, have every mob drop a level-appropriate item:
-            self.inventory.Pickup(items.random_item(int_range(self.level, self.level/4.0, 2)))
+            self.inventory.Pickup(pyro_items.random_item(int_range(self.level, self.level/4.0, 2)))
     def Attack(self, target):
         # If a weapon is wielded, attack with it:
         try:
@@ -301,7 +301,7 @@ class Creature(object):
         self.Regenerate()
         self.AI.Update()
     def UpdateEffects(self):
-        "Update any temporary mods on self or carried items."
+        "Update any temporary mods on self or carried pyro_items."
         expired_effects = [e for e in self.effects if e.expiration is not None
                            and e.expiration < self.age]
         for e in expired_effects:
@@ -393,15 +393,15 @@ class Inventory(object):
         self.mob.current_level.AddItem(dropped, self.mob.x, self.mob.y)
         return True, text
     def DropAll(self):
-        "Drop all inventory items--e.g. when the mob dies."
+        "Drop all inventory pyro_items--e.g. when the mob dies."
         for i in self.items:
             self.Drop(i[0])
     def GetItemByLetter(self, letter):
-        items = [i[0] for i in self.items if i[1] == letter]
-        if len(items) == 0:
+        pyro_items = [i[0] for i in self.items if i[1] == letter]
+        if len(pyro_items) == 0:
             return None
-        elif len(items) == 1:
-            return items[0]
+        elif len(pyro_items) == 1:
+            return pyro_items[0]
         else:
             raise IndexError
     def Has(self, item):
@@ -409,8 +409,8 @@ class Inventory(object):
         return item in [i[0] for i in self.items]
     def ItemsOfType(self, type, letters=True):
         # Verify valid type:
-        assert len([t for t in items.types if t[0] == type]) != 0
-        # Return the list of items:
+        assert len([t for t in pyro_items.types if t[0] == type]) != 0
+        # Return the list of pyro_items:
         it = [i for i in self.items if i[0].type == type]
         it.sort(key=lambda i:i[0])
         if letters:
@@ -425,10 +425,10 @@ class Inventory(object):
                 return L
         return None
     def Num(self):
-        "Number of items in the inventory."
+        "Number of pyro_items in the inventory."
         return len(self.items)
     def Pickup(self, item, qty=1):
-        # If they want to pick up fewer items than are there, split stacks:
+        # If they want to pick up fewer pyro_items than are there, split stacks:
         no_remove = False
         if qty < item.quantity:
             new_item = item.Duplicate()  # item to be picked up
@@ -449,7 +449,7 @@ class Inventory(object):
             return False, lang.error_too_heavy
     def Remove(self, item, qty=1):
         "Remove a quantity of an item from inventory, returning the item stack removed."
-        new_items = []
+        new_pyro_items = []
         removed_item = None
         for i in self.items:
             if i[0] == item:
@@ -463,10 +463,10 @@ class Inventory(object):
                     removed_item = deepcopy(i[0])
                     removed_item.quantity = qty
                     i[0].quantity -= qty
-                    new_items.append(i)
+                    new_pyro_items.append(i)
             else:
-                new_items.append(i)
-        self.items = new_items
+                new_pyro_items.append(i)
+        self.items = new_pyro_items
         return removed_item
     def TotalWeight(self):
         return sum([i[0].Weight() for i in self.items])
@@ -584,17 +584,17 @@ class WimpyKobold(Kobold):
     hp_max = 6
     str, dex, int = 2, 6, 3
     level = 1
-    attacks = [[items.Punch("1d3", 100), 1]]
+    attacks = [[pyro_items.Punch("1d3", 100), 1]]
     desc = lang.mob_desc_kobold
     def __init__(self):
         Kobold.__init__(self)
         # Some kobolds carry weapons:
         if irand(0, 10) < 7:
             weapon = weighted_choice([
-                (items.ShortSword(), 1),
-                (items.Dagger(), 2),
-                (items.Club(), 3),
-                (items.Whip(), 0.5)])
+                (pyro_items.ShortSword(), 1),
+                (pyro_items.Dagger(), 2),
+                (pyro_items.Club(), 3),
+                (pyro_items.Whip(), 0.5)])
             self.inventory.Pickup(weapon)
             self.Equip(weapon)
     
@@ -609,9 +609,9 @@ class WimpyGoblin(Goblin):
         Goblin.__init__(self)
         # Goblins always carry weapons:
         weapon = weighted_choice([
-            (items.ShortSword(), 3),
-            (items.Club(), 4),
-            (items.LongSword(), 1)])
+            (pyro_items.ShortSword(), 3),
+            (pyro_items.Club(), 4),
+            (pyro_items.LongSword(), 1)])
         self.inventory.Pickup(weapon)
         self.Equip(weapon)
         
@@ -646,7 +646,7 @@ class Ogre(Humanoid):
     str, dex, int = 14, 6, 3
     level = 4
     move_speed = 80
-    attacks = [[items.Punch("1d3", 80), 1]]
+    attacks = [[pyro_items.Punch("1d3", 80), 1]]
     desc = lang.mob_desc_ogre
     
 all_creatures = [Rat, GreaterRat,  WimpyKobold, WimpyGoblin, Wolf, Imp, Ogre]
