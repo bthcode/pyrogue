@@ -520,7 +520,7 @@ class IOWrapper(object):
     def GetString(self, prompt, x=0, y=0, pattr=c_yellow, iattr=c_yellow,
                   max_length=999, noblank=False, nostrip=False, mask=None):
         "Prompt the user for a string and return it."
-        mask = mask or " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+        mask = mask or " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"
         str = ""
         self.screen.addstr(y, x, prompt, pattr)
         x += len(prompt)
