@@ -24,17 +24,26 @@ types = [
 class AttackType(object):
     "Any mode of attack."
     speed = 100
+    range = 1
 
 class MeleeAttackType(AttackType):
     "Some mode of melee attack."
     damage_type = "physical"
-    speed = 100
-    damage = "1d3"
+    speed       = 100
+    damage      = "1d3"
     def __init__(self, damage=None, speed=None):
         if damage is not None: self.damage = damage
         if speed is not None: self.speed = speed
     def Attempt(self, attacker, target):
-        "Attempt this attack on the given target."
+        '''Attempt this attack on the given target.
+
+        Args:
+            attacker: a Creature
+            target: a Creature
+
+        Returns:
+            true if attack successful, else false 
+        '''
         attacker.Delay(self.speed)
         hit = attacker.MeleeHitBonus()
         evade = target.EvasionBonus()
@@ -214,6 +223,7 @@ class MissileWeapon(Weapon):
         # Implement in subclass.
         pass
 class Bow(MissileWeapon):
+    range = 8
     def CanFire(self, ammo):
         return isinstance(ammo, Arrow)
 
@@ -289,6 +299,7 @@ class ShortBow(Bow):
     name = lang.itemname_shortbow
     desc = lang.itemdesc_shortbow
     weight = 3.0
+    range  = 8
 
 # Specific ammunition types:
 class WoodArrow(Arrow):

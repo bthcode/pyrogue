@@ -1,4 +1,5 @@
 "util.py - Pyro utility functions"
+import math
 import curses
 from copy import deepcopy
 from random import choice, randint, uniform as rnd, normalvariate as norm, seed
@@ -311,7 +312,21 @@ def path_clear(path, blocked):
     for x, y in path:
         if blocked(x, y): return False
     return True
+
+def calc_distance(x1, y1, x2, y2):
+    '''Calculate simple hypotenuse
+
+    Arguments
+        x1, y1: Position 1
+        x2, y2: Position 2
     
+    Returns
+        h (int): rounded integer hypotenuse
+    '''
+    h = math.sqrt((x1-x2)**2 + (y1-y2)**2)
+    return int(round(h))
+    
+
 def linear_path(x1, y1, x2, y2, blocked):
     "Return a list of (x, y) tuples along a line from (x1, y1) to (x2, y2)."
     # blocked is a function that returns whether (x, y) is blocked

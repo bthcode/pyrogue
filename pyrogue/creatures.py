@@ -15,7 +15,6 @@ all_creatures += all_animals
 all_creatures += all_humanoids
 
 
-
 def RandomMob(level):
     "Create and return a mob appropriate to the given dungeon level."
     mobs = [(mob, mob.rarity) for mob in all_creatures if -1 <= level - mob.level <= 1]

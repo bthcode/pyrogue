@@ -219,7 +219,7 @@ class PlayerCharacter(creatures.Humanoid):
             Global.IO.Message("You asked for a {0}".format(monster))
             monster_list = [ x.__name__ for x in creatures.all_creatures ]
             if monster not in monster_list:
-                Global.IO.Message('Please choose from {0}'.format(pprint.pformat(monster_list)))
+                pass
             else:
                 x,y = self.current_level.GetCoordsNear(self.x, self.y)
                 Global.IO.Message("Creating a {0} at {1}, {2}".format(monster, x, y)) 

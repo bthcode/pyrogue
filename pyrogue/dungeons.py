@@ -214,7 +214,7 @@ class Level(object):
                 and not self.CreatureAt(x, y)
                 and not self.ItemsAt(x, y))
     def GetCoordsNear(self, x, y):
-        r = 1
+        r = 2
         while True:
             for i in range(x-r,x+r):
                 for j in range(y-r, y+r):

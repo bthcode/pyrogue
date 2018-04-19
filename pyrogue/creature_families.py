@@ -5,6 +5,7 @@ from pyro_items import MeleeAttackType
 import pyro_items
 import dungeons
 import astar
+import magic
         
 class Bite(pyro_items.MeleeAttackType):
     name = "bite"
@@ -61,8 +62,13 @@ class Berserker(AI):
             if adjacent(self.mob, pc):
                 self.mob.Attack(pc)
                 return
-            if self.mob.can_see_pc:
+            elif self.mob.can_see_pc:
                 self.tx, self.ty = pc.x, pc.y
+                if self.mob.CanAttack(pc):
+                    walk_or_attack = weighted_choice( [('Walk', 1), ('Attack', 1)] )
+                    if walk_or_attack == 'Attack':
+                        self.mob.Attack(pc)
+                        return
             else:
                 if (self.mob.x, self.mob.y) == (self.tx, self.ty):
                     # We're at the last place we saw the @, and we still can't see him:
@@ -135,6 +141,7 @@ class Creature(object):
             # For now, have every mob drop a level-appropriate item:
             self.inventory.Pickup(pyro_items.random_item(int_range(self.level, self.level/4.0, 2)))
     def Attack(self, target):
+        ''' TODO: add a range test here '''
         # If a weapon is wielded, attack with it:
         try:
             # TODO: Support dual (or more!) wielding by handling a multi-item return list:
@@ -142,7 +149,23 @@ class Creature(object):
         except IndexError:
             # Otherwise, randomly choose a natural attack and use it:
             attack = weighted_choice(self.attacks)
-        success = attack.Attempt(self, target)
+        if isinstance(attack, magic.BoltSpell):
+            log ('calling cast')
+            attack.Attempt(self, target)
+            self.Delay(self.cast_speed)
+        else:
+            success = attack.Attempt(self, target)
+    def GetPathToTarget(self, target):
+        return linear_path(self.x, self.y, target.x, target.y,
+                           self.current_level.BlocksPassage)
+
+    def CanAttack(self, target):
+        ''' Range test '''
+        range_to_target = calc_distance(self.x, self.y, target.x, target.y)
+        for attack in self.attacks:
+            if attack[0].range >= range_to_target:
+                return True
+        return False
     def CanOccupyTerrain(self, terrain):
         "Return whether the mob can enter a square with the given terrain."
         if terrain == FLOOR:

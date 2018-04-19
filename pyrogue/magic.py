@@ -18,14 +18,52 @@ class Spell(object):
 
 class BoltSpell(Spell):
     "Spells that fire a projectile by line-of-sight toward the target mob."
+    def Attempt(self, caster, target):
+
+        path, path_clear = caster.GetPathToTarget(target)
+
+        # Find the first square along the path where there's an obstacle:
+        actual_path = []
+        for x, y in path[1:]:
+            actual_path.append((x, y))
+            if caster.current_level.BlocksPassage(x, y):
+                # Something here blocks the bolt; see if it's a mob:
+                mob = caster.current_level.CreatureAt(x, y)
+                if mob:
+                    target = mob
+                break
+        Global.IO.AnimateProjectile((actual_path, path_clear), self.projectile_char, self.projectile_color)
+        damage_taken = target.TakeDamage(self.Damage(caster), type=self.damage_type, source=caster)
+        color = "^Y^"
+        if caster is Global.pc:
+            self.AfterCast(caster)
+            cp = "Your"
+            color = "^G^"
+        else:
+            cp = lang.ArticleName("The", caster) + "'s"
+        if target is Global.pc:
+            tp = "you"
+            color = "^R^"
+        else:
+            tp = lang.ArticleName("the", target)
+        if Global.pc in (caster, target) or caster.pc_can_see or target.pc_can_see:
+            Global.IO.Message("%s %s %s%s^0^ %s. [%s%s^0^]" %
+                (cp, self.name.lower(), color, lang.word_hits, tp, color, damage_taken))
+        if caster is Global.pc and target.dead:
+            Global.IO.Message(lang.combat_you_killed % 
+                              (lang.ArticleName("the", target), target.kill_xp))
+
+        return True
+
+    
     def Cast(self, caster):
-        if not self.CanCast(caster): 
-            return
+        #if not self.CanCast(caster): 
+        #    return
         target, (path, path_clear) = caster.GetTarget()
         if not target:
             # Spell was cancelled:
             return
-        if self.harmful and target is Global.pc:
+        if self.harmful and target is Global.pc and caster is Global.pc:
             if not Global.IO.YesNo(lang.prompt_harmful_spell_at_self % self.name.lower()):
                 # Chicken!
                 return
