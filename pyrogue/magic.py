@@ -98,6 +98,108 @@ class BoltSpell(Spell):
             Global.IO.Message(lang.combat_you_killed % 
                               (lang.ArticleName("the", target), target.kill_xp))
 
+class AreaEffectSpell(Spell):
+    "Spells that affect an area"
+    def Attempt(self, caster, target):
+        return
+
+        path, path_clear = caster.GetPathToTarget(target)
+
+        # Find the first square along the path where there's an obstacle:
+        actual_path = []
+        for x, y in path[1:]:
+            actual_path.append((x, y))
+            if caster.current_level.BlocksPassage(x, y):
+                # Something here blocks the bolt; see if it's a mob:
+                mob = caster.current_level.CreatureAt(x, y)
+                if mob:
+                    target = mob
+                break
+        pts = Global.IO.AnimateProjectile((actual_path, path_clear), self.projectile_char, self.projectile_color)
+        if len(pts) == 0: return
+        targets = []
+        for pt in pts:
+            c = Global.pc.current_level.CreatureAt(pt[0], pt[1])
+            if c:
+                targets.append(pt)
+                damage_taken = target.TakeDamage(self.Damage(caster), type=self.damage_type, source=caster)
+                color = "^Y^"
+                if caster is Global.pc:
+                    cp = "Your"
+                    color = "^G^"
+                else:
+                    cp = lang.ArticleName("The", caster) + "'s"
+                if target is Global.pc:
+                    tp = "you"
+                    color = "^R^"
+                else:
+                    tp = lang.ArticleName("the", target)
+                if Global.pc in (caster, target) or caster.pc_can_see or target.pc_can_see:
+                    Global.IO.Message("%s %s %s%s^0^ %s. [%s%s^0^]" %
+                        (cp, self.name.lower(), color, lang.word_hits, tp, color, damage_taken))
+                if caster is Global.pc and target.dead:
+                    Global.IO.Message(lang.combat_you_killed % 
+                                      (lang.ArticleName("the", target), target.kill_xp))
+               
+        self.AfterCast(caster)
+        
+
+        damage_taken = target.TakeDamage(self.Damage(caster), type=self.damage_type, source=caster)
+        color = "^Y^"
+        if caster is Global.pc:
+            self.AfterCast(caster)
+            cp = "Your"
+            color = "^G^"
+        else:
+            cp = lang.ArticleName("The", caster) + "'s"
+        if target is Global.pc:
+            tp = "you"
+            color = "^R^"
+        else:
+            tp = lang.ArticleName("the", target)
+        if Global.pc in (caster, target) or caster.pc_can_see or target.pc_can_see:
+            Global.IO.Message("%s %s %s%s^0^ %s. [%s%s^0^]" %
+                (cp, self.name.lower(), color, lang.word_hits, tp, color, damage_taken))
+        if caster is Global.pc and target.dead:
+            Global.IO.Message(lang.combat_you_killed % 
+                              (lang.ArticleName("the", target), target.kill_xp))
+
+        return True
+
+    
+    def Cast(self, caster):
+        target, (path, path_clear) = caster.GetTarget(self.range)
+        if not target:
+            # Spell was cancelled:
+            return
+        pts = Global.IO.AnimateAreaEffect(target.x, target.y, self.radius, self.projectile_char, self.projectile_color)
+        if len(pts) == 0: return
+        for pt in pts:
+            target = Global.pc.current_level.CreatureAt(pt[0], pt[1])
+            # Area affect spells only affect other creatures for now
+            if target and target is not Global.pc:
+                damage_taken = target.TakeDamage(self.Damage(caster), type=self.damage_type, source=caster)
+                color = "^Y^"
+                if caster is Global.pc:
+                    cp = "Your"
+                    color = "^G^"
+                else:
+                    cp = lang.ArticleName("The", caster) + "'s"
+                if target is Global.pc:
+                    tp = "you"
+                    color = "^R^"
+                else:
+                    tp = lang.ArticleName("the", target)
+                if Global.pc in (caster, target) or caster.pc_can_see or target.pc_can_see:
+                    Global.IO.Message("%s %s %s%s^0^ %s. [%s%s^0^]" %
+                        (cp, self.name.lower(), color, lang.word_hits, tp, color, damage_taken))
+                if caster is Global.pc and target.dead:
+                    Global.IO.Message(lang.combat_you_killed % 
+                                      (lang.ArticleName("the", target), target.kill_xp))
+               
+        self.AfterCast(caster)
+
+
 class SelfBuffSpell(Spell):
     "Spells that confer a temporary effect upon the caster."
     harmful = False
@@ -213,4 +315,17 @@ class MagicMissile(BoltSpell):
     def Damage(self, caster):
         return d("1d3")
        
+class LightningBall(AreaEffectSpell):
+    name = lang.spellname_lightning_ball
+    shortcut = lang.spellcode_lightning_ball
+    harmful = True
+    level = 1
+    mp_cost = 1
+    range = 5
+    damage_type = ""
+    radius = 3
+    projectile_char, projectile_color = '*', c_Cyan
+    desc = lang.spelldesc_lightning_ball
+    def Damage(self, caster):
+        return d("1d3")
     

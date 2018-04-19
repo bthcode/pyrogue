@@ -143,6 +143,27 @@ class IOWrapper(object):
             Global.pc.current_level.PaintSquare(px, py)
             self.screen.move(Global.pc.y+self.message_lines, Global.pc.x)
             self.screen.refresh()
+    def AnimateAreaEffect(self, tx, ty, radius, char, color):
+        # TODO: use fov to do this smarter
+        pts = []
+        for i in range(tx-radius, tx+radius+1):
+            for j in range(ty-radius, ty+radius+1):
+                terrain = Global.pc.current_level.layout.data[j][i]
+                if not Global.pc.CanOccupyTerrain(terrain):
+                    continue
+                dist = calc_distance(tx, ty, i, j)
+                if dist <= radius:
+                    pts.append([i,j])
+        for pt in pts:
+            self.screen.PutChar(self.message_lines+pt[1], pt[0], "*", color)
+        animation_delay()     
+        self.screen.move(Global.pc.y + self.message_lines, Global.pc.x)
+        self.screen.refresh()
+        for pt in pts:
+            Global.pc.current_level.PaintSquare(pt[0], pt[1])
+            self.screen.move(Global.pc.y+self.message_lines, Global.pc.x)
+            self.screen.refresh()
+        return pts
     def Ask(self, question, opts, attr=c_yellow):
         "Ask the player a question."
         self.Message(question)
@@ -541,7 +562,11 @@ class IOWrapper(object):
                         return str.strip()
             self.screen.addstr(y, x, str+" ", iattr)
     def GetTarget(self, prompt=lang.prompt_choose_target, LOS=True):
-        "Ask the player to target a mob."
+        """Ask the player to target a mob.
+    
+        TODO:
+            Add a range to this
+        """
         path, clear = [], False
         mobs = self.NearbyMobCycler()
         if Global.pc.target:

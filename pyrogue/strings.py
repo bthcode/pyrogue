@@ -301,6 +301,10 @@ class English(object):
     
     spellcode_agility = "agi"
     spellcode_magic_missile = "mis"
+    spellcode_lightning_ball = "lba"
+
+    spellname_lightning_ball = "Lightning Ball"
+    spelldesc_lightning_ball = "A ball of lightning, radius=3"
     
     spelldesc_agility = "Improves the caster's hand-eye coordination for a brief time."
     spelldesc_magic_missile = "A small bolt of arcane energy leaps from the caster's finger and strikes the target.  The damage is light, but cannot be resisted."

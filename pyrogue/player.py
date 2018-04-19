@@ -426,8 +426,11 @@ class PlayerCharacter(creatures.Humanoid):
         Global.IO.Message(lang.msg_you_feel_improved % adj)
     def GainXP(self, amount):
         self.xp += amount
-    def GetTarget(self):
+    def GetTarget(self, target_range=None):
         "Ask the player for a target."
+        # TODO:
+        # - target must be in range
+        # - target must be in fov
         if self.target:
             return self.target, linear_path(self.x, self.y, self.target.x, self.target.y,
                                             self.current_level.BlocksPassage)
@@ -855,6 +858,7 @@ class DisElf(Archetype):
         pc.stats = creatures.Stats(7, 7, 10)
         self.stat_gains = ['int', 'any']
         pc.spells.append(magic.AgilitySpell())
+        pc.spells.append(magic.LightningBall())
 class KrolHuman(Archetype):
     name = lang.archname_krolhuman
     cname = lang.archname_krolhuman_short
