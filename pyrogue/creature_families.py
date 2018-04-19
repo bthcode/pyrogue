@@ -3,7 +3,7 @@
 from util import *
 from pyro_items import MeleeAttackType
 import pyro_items
-import dungeons
+import dungeon_features
 import astar
 import magic
         
@@ -52,7 +52,7 @@ class Berserker(AI):
                     self.mob.Walk(self.dx, self.dy)
                     return
                 # The square is blocked; see if it's an openable door:
-                if isinstance(blocker, dungeons.Door):
+                if isinstance(blocker, dungeon_features.Door):
                     if self.mob.can_open_doors:
                         if not blocker.Open(self.mob):
                             # Tried and failed to open the door; waste some time:
@@ -227,7 +227,7 @@ class Creature(object):
     def PathfindPass(self, x, y):
         "Return whether the square is passable for the pathfinder."
         b = self.SquareBlocked(x, y)
-        return (b is None) or (isinstance(b, dungeons.Door) and self.can_open_doors)
+        return (b is None) or (isinstance(b, dungeon_features.Door) and self.can_open_doors)
     def ProtectionBonus(self):
         return (self.natural_armor + sum([a.armor_points for a in self.equipped])) / 10.0
     def Quaff(self, potion):

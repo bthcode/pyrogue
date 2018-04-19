@@ -6,8 +6,8 @@ from util import *
 import creatures
 import pyro_items
 import fov
-import dungeons
 import magic
+import dungeon_features
 
 class PlayerCharacter(creatures.Humanoid):
     "The player character."
@@ -103,7 +103,7 @@ class PlayerCharacter(creatures.Humanoid):
                 if ((dx == 0 or dy == 0) and (dx != dy )
                 and (self.x+dx != self.prev_x or self.y+dy != self.prev_y)):
                     F = self.current_level.FeatureAt(self.x+dx, self.y+dy)
-                    if isinstance(F, dungeons.Door):
+                    if isinstance(F, dungeon_features.Door):
                         self.running = False
         if self.can_see_mobs:
             self.running = False
@@ -474,7 +474,7 @@ class PlayerCharacter(creatures.Humanoid):
         doors = []
         for x, y in adj:
             F = self.current_level.FeatureAt(x, y)
-            if isinstance(F, dungeons.Door):
+            if isinstance(F, dungeon_features.Door):
                 doors.append(F)
         if len(doors) == 0:
             Global.IO.Message(lang.error_nothing_near_to_openclose)
@@ -493,7 +493,7 @@ class PlayerCharacter(creatures.Humanoid):
                 return
             else:
                 door = self.current_level.FeatureAt(self.x+dx, self.y+dy)
-                if isinstance(door, dungeons.Door):
+                if isinstance(door, dungeon_features.Door):
                     if door.closed:
                         door.Open(self)
                     else:
@@ -648,7 +648,7 @@ class PlayerCharacter(creatures.Humanoid):
                       if f.name == name][0]
         else:
             stairs = self.current_level.FeatureAt(self.x, self.y)
-            if not isinstance(stairs, dungeons.Staircase):
+            if not isinstance(stairs, dungeon_features.Staircase):
                 Global.IO.Message(lang.error_no_stairs_here)
                 return False
         if action == "ascend":
