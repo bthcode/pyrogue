@@ -107,4 +107,4 @@ Each piece of armor has an armor point rating (AP).  The AP of every piece of eq
 
 API DOCS
 --------
-http://pyrogue.readthedocs.io/en/latest/1
+http://pyrogue.readthedocs.io/en/latest
