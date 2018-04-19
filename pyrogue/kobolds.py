@@ -6,10 +6,10 @@ class WimpyKobold(Kobold):
     hp_max = 6
     str, dex, int = 2, 6, 3
     level = 1
-    attacks = [[pyro_items.Punch("1d3", 100), 1]]
     desc = lang.mob_desc_kobold
     def __init__(self):
         Kobold.__init__(self)
+        self.attacks = [[pyro_items.Punch("1d3", 100), 1]]
         # Some kobolds carry weapons:
         if irand(0, 10) < 7:
             weapon = weighted_choice([
@@ -19,4 +19,6 @@ class WimpyKobold(Kobold):
                 (pyro_items.Whip(), 0.5)])
             self.inventory.Pickup(weapon)
             self.Equip(weapon)
+        
  
+all_kobolds = [WimpyKobold]

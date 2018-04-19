@@ -8,11 +8,13 @@ import astar
 import magic
         
 class Bite(pyro_items.MeleeAttackType):
+    range = 1
     name = "bite"
     verbs = lang.verbs_bite  # no damage, hit, crit
     verbs_sp = lang.verbs_bite_2p
     damage = "1d4"
 class Claw(pyro_items.MeleeAttackType):
+    range = 1
     name = "claw"
     verbs = lang.verbs_claw
     verbs_sp = lang.verbs_claw_2p
@@ -141,14 +143,12 @@ class Creature(object):
             # For now, have every mob drop a level-appropriate item:
             self.inventory.Pickup(pyro_items.random_item(int_range(self.level, self.level/4.0, 2)))
     def Attack(self, target):
-        ''' TODO: add a range test here '''
-        # If a weapon is wielded, attack with it:
-        try:
-            # TODO: Support dual (or more!) wielding by handling a multi-item return list:
-            attack = self.ItemsInSlot(lang.equip_slot_meleeweapon)[0].melee_attack
-        except IndexError:
-            # Otherwise, randomly choose a natural attack and use it:
-            attack = weighted_choice(self.attacks)
+        ''' TODO: combine melee item into attacks '''
+        range_to_target = calc_distance(self.x, self.y, target.x, target.y)
+        attacks = [ x for x in self.attacks if x[0].range >= range_to_target ]
+        if not len(attacks): 
+            return
+        attack = weighted_choice(attacks)
         if isinstance(attack, magic.BoltSpell):
             log ('calling cast')
             attack.Attempt(self, target)
@@ -571,5 +571,24 @@ class Rodent(Creature):
 class Kobold(Creature):
     tile = "k"
     color = c_Green
+    def __init__(self):
+        Creature.__init__(self)
+        self.unequipped = [
+            lang.equip_slot_head,
+            lang.equip_slot_torso,
+            lang.equip_slot_hands,
+            lang.equip_slot_waist,
+            lang.equip_slot_feet,
+            lang.equip_slot_finger,
+            lang.equip_slot_finger,
+            lang.equip_slot_neck,
+            lang.equip_slot_back,
+            lang.equip_slot_offhand,
+            lang.equip_slot_meleeweapon,
+            lang.equip_slot_missileweapon,
+            lang.equip_slot_ammo,
+    ]    
+
+
 
     

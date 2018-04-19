@@ -26,6 +26,7 @@ class PlayerCharacter(creatures.Humanoid):
     spells, last_spell = [], ""
     friendly = True
     vision_radius = 80
+    attacks = []
     def __init__(self):
         Global.pc = self
         # Do generic humanoid creature initialization:

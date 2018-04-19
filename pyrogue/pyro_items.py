@@ -24,13 +24,13 @@ types = [
 class AttackType(object):
     "Any mode of attack."
     speed = 100
-    range = 1
 
 class MeleeAttackType(AttackType):
     "Some mode of melee attack."
     damage_type = "physical"
     speed       = 100
     damage      = "1d3"
+    range       = 1
     def __init__(self, damage=None, speed=None):
         if damage is not None: self.damage = damage
         if speed is not None: self.speed = speed
@@ -144,28 +144,34 @@ class Item(object):
 
 # Weapon attack types:
 class Punch(MeleeAttackType):
+    range = 1
     name = lang.word_punch
     verbs = lang.verbs_punch
     verbs_sp = lang.verbs_punch_2p
     speed = 150
     damage = "1d2"
 class Slash(MeleeAttackType):
+    range = 1
     name = lang.word_slash
     verbs = lang.verbs_slash
     verbs_sp = lang.verbs_slash_2p
 class Stab(MeleeAttackType):
+    range = 1
     name = lang.word_stab
     verbs = lang.verbs_stab
     verbs_sp = lang.verbs_stab_2p
 class Lash(MeleeAttackType):
+    range = 1
     name = lang.word_lash
     verbs = lang.verbs_lash
     verbs_sp = lang.verbs_lash_2p
 class Bludgeon(MeleeAttackType):
+    range = 1
     name = lang.word_bludgeon
     verbs = lang.verbs_bludgeon
     verbs_sp = lang.verbs_bludgeon_2p
 class Chop(MeleeAttackType):
+    range = 1
     name = lang.word_chop
     verbs = lang.verbs_chop
     verbs_sp = lang.verbs_chop_2p
@@ -180,6 +186,7 @@ class MeleeWeapon(Weapon):
     tile = "("
     color = c_Cyan
     equip_slot = lang.equip_slot_meleeweapon
+    range = 1
     def BonusString(self):
         bonus = ""
         hit, dam = self.hit_bonus, self.damage_bonus
@@ -207,6 +214,10 @@ class MeleeWeapon(Weapon):
         if self.melee_twohand:
             desc += lang.label_twohand + "\n"
         return desc
+    def OnEquip(self, mob):
+        mob.attacks.append( (self.melee_attack, 10) )
+    def OnUnequip(self, mob):
+        mob.attacks = [ x for x in mob.attacks if x[0] != self.melee_attack ]
 
         
 class MissileWeapon(Weapon):
