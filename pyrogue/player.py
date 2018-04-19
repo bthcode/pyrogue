@@ -176,6 +176,17 @@ class PlayerCharacter(creatures.Humanoid):
                 Global.IO.Message("You are now immortal and cannot die.")
             else:
                 Global.IO.Message("You are once again subject to death.")
+        def cheat_pyro_item():
+            item = Global.IO.GetMonsterChoice("Item:")
+            Global.IO.Message("You asked for a {0}".format(item))
+            item_list = [ x.__name__ for x in creatures.all_creatures ]
+            try:
+                x,y = self.current_level.GetCoordsNear(self.x, self.y)
+                Global.IO.Message("Creating a {0} at {1}, {2}".format(item, x, y)) 
+                m = getattr(pyro_items, item)()
+                self.current_level.AddItem(m, x, y)
+            except:
+                Global.IO.Message("Error creating item")
         def cheat_pyro_items():
             for i in range(20):
                 while True:
@@ -242,6 +253,7 @@ class PlayerCharacter(creatures.Humanoid):
             Cheat("Clear nearby walls", "", cheat_clearout),
             Cheat("Target test", "", cheat_test),
             Cheat("Summon monster", "", cheat_summon_monster),
+            Cheat("Get Item", "", cheat_pyro_item),
         ]
         cheat = Global.IO.GetChoice(cheats, "Cheat how?", nocancel=False)
         if cheat is not None:
