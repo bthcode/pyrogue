@@ -59,7 +59,7 @@ class BoltSpell(Spell):
     def Cast(self, caster):
         #if not self.CanCast(caster): 
         #    return
-        target, (path, path_clear) = caster.GetTarget()
+        target, (path, path_clear) = caster.GetTarget(target_range=self.range)
         if not target:
             # Spell was cancelled:
             return
@@ -105,7 +105,7 @@ class AreaEffectSpell(Spell):
 
     
     def Cast(self, caster):
-        target, (path, path_clear) = caster.GetTarget(self.range)
+        target, (path, path_clear) = caster.GetTarget(target_range=self.range)
         if not target:
             # Spell was cancelled:
             return

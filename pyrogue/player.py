@@ -431,12 +431,15 @@ class PlayerCharacter(creatures.Humanoid):
         # TODO:
         # - target must be in range
         # - target must be in fov
-        if self.target:
+        # - allow for direction key selection
+
+        # - If target selected, highlight and prompt for enter
+        t, p = Global.IO.GetTarget(target=self.target, target_range = target_range)
+        if isinstance(t, creatures.Creature):
+            self.target = t
             return self.target, linear_path(self.x, self.y, self.target.x, self.target.y,
                                             self.current_level.BlocksPassage)
-        t, p = Global.IO.GetTarget()
-        if t:
-            self.target = t
+        
         return t, p
     def InitCommands(self):
         self.commands = []

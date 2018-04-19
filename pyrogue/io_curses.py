@@ -564,7 +564,7 @@ class IOWrapper(object):
                     else:
                         return str.strip()
             self.screen.addstr(y, x, str+" ", iattr)
-    def GetTarget(self, prompt=lang.prompt_choose_target, LOS=True):
+    def GetTarget(self, prompt=lang.prompt_choose_target, LOS=True, target=None, target_range=None):
         """Ask the player to target a mob.
     
         TODO:
