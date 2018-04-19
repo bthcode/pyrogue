@@ -337,7 +337,7 @@ def linear_path(x1, y1, x2, y2, blocked):
     if dx == dy == 0:
         return [(x1, y1)], True
     elif dx == 0:
-        inc = dy / abs(dy)
+        inc = int(dy / abs(dy))
         x, y = x1, y1
         while y != y2:
             path.append((x, y))
@@ -345,7 +345,7 @@ def linear_path(x1, y1, x2, y2, blocked):
         path.append((x2, y2))
         return path, path_clear(path[1:-1], blocked)
     elif dy == 0:
-        inc = dx / abs(dx)
+        inc = int(dx / abs(dx))
         x, y = x1, y1
         while x != x2:
             path.append((x, y))
@@ -353,7 +353,7 @@ def linear_path(x1, y1, x2, y2, blocked):
         path.append((x2, y2))
         return path, path_clear(path[1:-1], blocked)
     elif abs(dy) == abs(dx):
-        inc_x, inc_y = dx / abs(dx), dy / abs(dy)
+        inc_x, inc_y = int(dx / abs(dx)), int(dy / abs(dy))
         x, y = x1, y1
         while x != x2:
             path.append((x, y))
