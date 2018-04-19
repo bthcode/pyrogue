@@ -103,3 +103,8 @@ ARMOR
 Equipping armor has at least two effects: your protection against physical damage is increased (good), and your freedom of movement may be decreased, making you easier to hit (not so good).  The decrease in evasion is explained in the STATS section above.  Here are the details on damage absorption:
 
 Each piece of armor has an armor point rating (AP).  The AP of every piece of equipped armor is added together and divided by 10 to get your protection value (PV).  Your PV is subtracted from all incoming physical damage.  Note that your PV might not be a whole number, in which case you have a chance to absorb an additional point of damage.  For example, say your PV is 3.7, then you always absorb at least 3 poins of damage.  Additionally 70% of the time, you'll abosorb an extra point, for a total of 4.  Thus, the average over many attacks will nearly equal the true value of 3.7.
+
+
+API DOCS
+--------
+http://pyrogue.readthedocs.io/en/latest/1
