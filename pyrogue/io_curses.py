@@ -144,16 +144,19 @@ class IOWrapper(object):
             self.screen.move(Global.pc.y+self.message_lines, Global.pc.x)
             self.screen.refresh()
     def AnimateAreaEffect(self, tx, ty, radius, char, color):
-        # TODO: use fov to do this smarter
-        pts = []
-        for i in range(tx-radius, tx+radius+1):
-            for j in range(ty-radius, ty+radius+1):
-                terrain = Global.pc.current_level.layout.data[j][i]
-                if not Global.pc.CanOccupyTerrain(terrain):
-                    continue
-                dist = calc_distance(tx, ty, i, j)
-                if dist <= radius:
-                    pts.append([i,j])
+        '''Show a 'Ball' effect, returning the affected points
+
+        Args
+            tx (int) : x position
+            ty (int) : y position
+            radius (int) radius in squares
+            char (char): character to draw
+            color (curses color): mapped in util
+
+        Returns
+            pts affected (As calculated by fov.Ball
+        '''
+        pts = Global.pc.current_level.fov.Ball(tx, ty, radius, ignore_walls=False)
         for pt in pts:
             self.screen.PutChar(self.message_lines+pt[1], pt[0], "*", color)
         animation_delay()     
