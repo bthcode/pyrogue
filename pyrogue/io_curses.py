@@ -571,12 +571,17 @@ class IOWrapper(object):
             Add a range to this
         """
         path, clear = [], False
-        mobs = self.NearbyMobCycler()
+        mobs = self.NearbyMobCycler(target_range=target_range)
         if Global.pc.target:
             # If a target is already selected, default to it:
             x, y = Global.pc.target.x, Global.pc.target.y
             if not Global.pc.current_level.fov.Lit(x, y):
                 x, y = Global.pc.x, Global.pc.y
+            # If target not visible or out of range it can't be our target
+            if target_range:
+                range_to_target = calc_distance(Global.pc.x, Global.pc.y, Global.pc.target.x, Global.pc.target.y)
+                if range_to_target > target_range:
+                    x,y = Global.pc.x, Global.pc.y
         elif mobs:
             # If mobs are nearby, default to the closest one:
             mob, (path, clear) = mobs.next()
@@ -719,10 +724,12 @@ class IOWrapper(object):
             self.messages_displayed = 0
             self.screen.addstr(0, 0, " " * self.width)
             self.screen.addstr(1, 0, " " * self.width)
-    def NearbyMobCycler(self):
+    def NearbyMobCycler(self, target_range=None):
         "Return a Cycler instance for mobs near the PC."
         # Build a list of targetable mobs:
-        nearby_mobs = [mob for mob in Global.pc.current_level.AllCreatures() if mob.pc_can_see]
+        nearby_mobs = [mob for mob in Global.pc.current_level.AllCreatures() if mob.pc_can_see ]
+        if target_range:
+            nearby_mobs = [mob for mob in nearby_mobs if calc_distance(Global.pc.x, Global.pc.y, mob.x, mob.y) <= target_range]
         if not nearby_mobs:
             return None
         targets = [(mob, linear_path(Global.pc.x, Global.pc.y, mob.x, mob.y,
