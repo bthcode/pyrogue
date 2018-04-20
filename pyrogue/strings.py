@@ -293,7 +293,8 @@ class English(object):
     prompt_unwear = "Unequip which item?"
     prompt_wear = "Equip which item?"
     prompt_which_ammo = "Fire which ammunition?"
-    prompt_which_direction = "Which direction? [1-9, or space to cancel]"
+    prompt_which_direction = "Which direction? [1-9/arrows, or space to cancel]"
+    prompt_direction_or_target = "Which direction? [1-9/arrows, or t for target]"
     prompt_wield = "Wield/unwield which item?"
     
     # The list of quality adjectives for armor, from worst to best:

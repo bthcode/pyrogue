@@ -381,6 +381,17 @@ def linear_path(x1, y1, x2, y2, blocked):
         # If we got here, we couldn't find a clear path.
         # Return the pretty path.
         return pretty_path, False
+
+def range_direction_path(x, y, target_range, direction, blocked):
+    # 1. For direction, calculate destination x and y
+    ctr     = 0
+    x_start = 0
+    y_start = 0
+    x_end   = x_start + target_range * direction[0]
+    y_end   = y_start + target_range * direction[1]
+    path, blocked = linear_path(x,y, x_end,y_end, blocked)
+    return path, blocked
+
         
 def animation_delay():
     if ANIMATION_DELAY:

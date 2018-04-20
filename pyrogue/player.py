@@ -429,8 +429,6 @@ class PlayerCharacter(creatures.Humanoid):
     def GetTarget(self, target_range=None):
         "Ask the player for a target."
         # TODO:
-        # - target must be in range
-        # - target must be in fov
         # - allow for direction key selection
 
         # - If target selected, highlight and prompt for enter

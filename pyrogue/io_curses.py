@@ -395,6 +395,32 @@ class IOWrapper(object):
                 break
         self.screen.addstr(0, 0, " " * self.width)
         return r
+    def GetDirectionOrTarget(self, caster, target_range=None):
+        self.screen.addstr(0, 0, lang.prompt_direction_or_target)
+        while True:
+            k = self.GetKey()
+            if k in range(49, 58):
+                dx, dy = offsets[k-49]
+                r = k, dx, dy
+                break
+            elif k in arrow_offsets:
+                dx, dy = arrow_offsets[k]
+                r = k, dx, dy
+                break
+            elif chr(k) in vi_offsets:
+                dx, dy = vi_offsets[chr(k)]
+                r = k, dx, dy
+                break
+            elif k in [ SPC, ESC ]:
+                r = 'x', None, None
+                break
+            elif chr(k) == 't':
+                target = self.GetTarget(target_range = target_range) 
+                if target:
+                    return 't', target, None
+        self.screen.addstr(0, 0, " " * self.width)
+        return r
+       
     def GetItemFromInventory(self, mob, prompt=None, equipped=False, types="", notoggle=False):
         "Ask the player to choose an item from inventory."
         # If notoggle is true, then the player can't move between equipped and backpack
@@ -566,9 +592,6 @@ class IOWrapper(object):
             self.screen.addstr(y, x, str+" ", iattr)
     def GetTarget(self, prompt=lang.prompt_choose_target, LOS=True, target=None, target_range=None):
         """Ask the player to target a mob.
-    
-        TODO:
-            Add a range to this
         """
         path, clear = [], False
         mobs = self.NearbyMobCycler(target_range=target_range)

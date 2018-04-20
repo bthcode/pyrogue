@@ -105,11 +105,30 @@ class AreaEffectSpell(Spell):
 
     
     def Cast(self, caster):
-        target, (path, path_clear) = caster.GetTarget(target_range=self.range)
-        if not target:
-            # Spell was cancelled:
+        direction_or_target = Global.IO.GetDirectionOrTarget(caster, target_range=self.range)
+
+        if direction_or_target[0] == 'x':
             return
-        pts = Global.IO.AnimateAreaEffect(target.x, target.y, self.radius, self.projectile_char, self.projectile_color)
+        elif direction_or_target[0] == 't':
+            target, (path, blocked) = direction_or_target[1]
+            tx = target.x
+            ty = target.y
+        else:
+            log ('direction here')
+            direction = [direction_or_target[1], direction_or_target[2]]
+            
+            path, blocked = range_direction_path(caster.x, caster.y, self.range, direction, Global.pc.current_level.BlocksPassage)
+
+            # Find the first square along the path where there's an obstacle:
+            actual_path = []
+            for x, y in path[1:]:
+                actual_path.append((x, y))
+                if caster.current_level.BlocksPassage(x, y):
+                    tx = x
+                    ty = y
+                    break
+              
+        pts = Global.IO.AnimateAreaEffect(tx, ty, self.radius, self.projectile_char, self.projectile_color)
         if len(pts) == 0: return
         for pt in pts:
             target = Global.pc.current_level.CreatureAt(pt[0], pt[1])
