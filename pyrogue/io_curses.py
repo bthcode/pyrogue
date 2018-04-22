@@ -79,6 +79,14 @@ tiles = {
     "blank":            " ",
 }
 
+class TargettingCommand:
+    mode      = 'x' # x = cancel, t = mob, d = direction
+    direction = [0,0]
+    target    = None
+    path      = []
+    blocked   = []
+
+
 class IOWrapper(object):
     "Class to handle all input/output."
     def __init__(self):
@@ -114,32 +122,14 @@ class IOWrapper(object):
                                           self.height, self.colors)
     def AnimateProjectile(self, path, char, color):
         "Show a projectile traveling the specified path."
-        px, py, pc, pa = None, None, None, None
         path, clear = path
         for x, y in path:
-            if px is not None:
-                Global.pc.current_level.PaintSquare(px, py)
-                if len(char) == 4:
-                    # Separate characters for horiz, vert, diag:  - | / \
-                    dx, dy = x - px, y - py
-                    if dy == 0:
-                        ch = char[0]
-                    elif dx == 0:
-                        ch = char[1]
-                    elif dx * dy < 0:
-                        ch = char[2]
-                    else: 
-                        ch = char[3]
-                else:
-                    ch = char
-            else:
-                ch = "*"
-            px, py = x, y
+            ch = "*"
             self.screen.PutChar(self.message_lines+y, x, ch, color)
             animation_delay()
             self.screen.move(Global.pc.y+self.message_lines, Global.pc.x)
             self.screen.refresh()
-        if px is not None:
+        for px, py in path: 
             Global.pc.current_level.PaintSquare(px, py)
             self.screen.move(Global.pc.y+self.message_lines, Global.pc.x)
             self.screen.refresh()
@@ -396,30 +386,59 @@ class IOWrapper(object):
         self.screen.addstr(0, 0, " " * self.width)
         return r
     def GetDirectionOrTarget(self, caster, target_range=None):
+        '''Return a direction or a target for targetting.
+
+        Returns
+             class TargettingCommand:
+                mode      = 'x' # x = cancel, t = mob, d = direction
+                direction = [0,0]
+                target    = None
+                path      = []
+                blocked   = []
+        '''
         self.screen.addstr(0, 0, lang.prompt_direction_or_target)
+        cmd = TargettingCommand()
         while True:
             k = self.GetKey()
             if k in range(49, 58):
                 dx, dy = offsets[k-49]
-                r = k, dx, dy
+                path, blocked = range_direction_path(caster.x, caster.y, target_range, [dx,dy], Global.pc.current_level.BlocksPassage)
+                cmd.type='d'
+                cmd.direction=[dx,dy]
+                cmd.path = path
+                cmd.blocked = blocked
                 break
             elif k in arrow_offsets:
                 dx, dy = arrow_offsets[k]
-                r = k, dx, dy
+                path, blocked = range_direction_path(caster.x, caster.y, target_range, [dx,dy], Global.pc.current_level.BlocksPassage)
+                cmd.type='d'
+                cmd.direction=[dx,dy]
+                cmd.path = path
+                cmd.blocked = blocked
                 break
             elif chr(k) in vi_offsets:
                 dx, dy = vi_offsets[chr(k)]
-                r = k, dx, dy
+                path, blocked = range_direction_path(caster.x, caster.y, target_range, [dx,dy], Global.pc.current_level.BlocksPassage)
+                cmd.type='d'
+                cmd.direction=[dx,dy]
+                cmd.path = path
+                cmd.blocked = blocked
                 break
             elif k in [ SPC, ESC ]:
-                r = 'x', None, None
+                cmd.type = 'x'
                 break
             elif chr(k) == 't':
-                target = self.GetTarget(target_range = target_range) 
+                target, (path, blocked) = self.GetTarget(target_range = target_range) 
                 if target:
-                    return 't', target, None
+                    cmd.type = 't'
+                    cmd.target = target
+                    cmd.path = path
+                    cmd.blocked = blocked
+                else:
+                    cmd.type = 'x'
+                break
         self.screen.addstr(0, 0, " " * self.width)
-        return r
+        return cmd
        
     def GetItemFromInventory(self, mob, prompt=None, equipped=False, types="", notoggle=False):
         "Ask the player to choose an item from inventory."
@@ -592,6 +611,11 @@ class IOWrapper(object):
             self.screen.addstr(y, x, str+" ", iattr)
     def GetTarget(self, prompt=lang.prompt_choose_target, LOS=True, target=None, target_range=None):
         """Ask the player to target a mob.
+
+        Returns:
+            mob : a creature selected for targetting
+            (path, blocked) : list of Squares in the path,  list of blocked squres
+        
         """
         path, clear = [], False
         mobs = self.NearbyMobCycler(target_range=target_range)

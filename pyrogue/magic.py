@@ -57,76 +57,113 @@ class BoltSpell(Spell):
 
     
     def Cast(self, caster):
-        #if not self.CanCast(caster): 
-        #    return
-        target, (path, path_clear) = caster.GetTarget(target_range=self.range)
-        if not target:
-            # Spell was cancelled:
+        '''Cast a ball spell at a target.  
+
+        Requirements
+            If the user gives a direction, hit the first thing in that direction
+            If the user gives a target, hit that first thing along the path
+
+        Args
+            caster - the player
+
+        Returns
+            None
+        '''
+        cmd = Global.IO.GetDirectionOrTarget(caster, target_range=self.range)
+
+        if cmd.type == 'x': # cancel
             return
-        if self.harmful and target is Global.pc and caster is Global.pc:
-            if not Global.IO.YesNo(lang.prompt_harmful_spell_at_self % self.name.lower()):
-                # Chicken!
-                return
-        # Find the first square along the path where there's an obstacle:
+        elif cmd.type == 't': # target
+            tx = cmd.target.x
+            ty = cmd.target.y
+        elif cmd.type == 'd': # direction
+            direction = cmd.direction
+        else:
+            return
+
+        # Find the first square along the path where there's an obstacle or we're at max range
         actual_path = []
-        for x, y in path[1:]:
+        target = None
+        for x, y in cmd.path[1:]:
             actual_path.append((x, y))
+            tx = x
+            ty = y
             if caster.current_level.BlocksPassage(x, y):
-                # Something here blocks the bolt; see if it's a mob:
                 mob = caster.current_level.CreatureAt(x, y)
                 if mob:
                     target = mob
                 break
+            
         Global.IO.AnimateProjectile((actual_path, path_clear), self.projectile_char, self.projectile_color)
-        damage_taken = target.TakeDamage(self.Damage(caster), type=self.damage_type, source=caster)
+        if target:
+            damage_taken = target.TakeDamage(self.Damage(caster), type=self.damage_type, source=caster)
+            color = "^Y^"
+            if caster is Global.pc:
+                cp = "Your"
+                color = "^G^"
+            else:
+                cp = lang.ArticleName("The", caster) + "'s"
+            if target is Global.pc:
+                tp = "you"
+                color = "^R^"
+            else:
+                tp = lang.ArticleName("the", target)
+            if Global.pc in (caster, target) or caster.pc_can_see or target.pc_can_see:
+                Global.IO.Message("%s %s %s%s^0^ %s. [%s%s^0^]" %
+                    (cp, self.name.lower(), color, lang.word_hits, tp, color, damage_taken))
+            if caster is Global.pc and target.dead:
+                Global.IO.Message(lang.combat_you_killed % 
+                                  (lang.ArticleName("the", target), target.kill_xp))
         self.AfterCast(caster)
-        color = "^Y^"
-        if caster is Global.pc:
-            cp = "Your"
-            color = "^G^"
-        else:
-            cp = lang.ArticleName("The", caster) + "'s"
-        if target is Global.pc:
-            tp = "you"
-            color = "^R^"
-        else:
-            tp = lang.ArticleName("the", target)
-        if Global.pc in (caster, target) or caster.pc_can_see or target.pc_can_see:
-            Global.IO.Message("%s %s %s%s^0^ %s. [%s%s^0^]" %
-                (cp, self.name.lower(), color, lang.word_hits, tp, color, damage_taken))
-        if caster is Global.pc and target.dead:
-            Global.IO.Message(lang.combat_you_killed % 
-                              (lang.ArticleName("the", target), target.kill_xp))
 
 class AreaEffectSpell(Spell):
-    "Spells that affect an area"
+    '''Spells that affect an area
+
+Requirements:
+    - area affect:
+        direction: go until you hit something or end of range
+        target: hit the target if visible
+    - bolt
+        direction: go until you hit something or end of range
+        target: go towards target or end of range
+    ''' 
     def Attempt(self, caster, target):
         return True
 
     
+    
     def Cast(self, caster):
-        direction_or_target = Global.IO.GetDirectionOrTarget(caster, target_range=self.range)
+        '''Cast a ball spell at a target.  
 
-        if direction_or_target[0] == 'x':
+        Requirements
+            If the user gives a direction, hit the first thing in that direction
+            If the user gives a target, hit that target
+
+        Args
+            caster - the player
+
+        Returns
+            None
+        '''
+        cmd = Global.IO.GetDirectionOrTarget(caster, target_range=self.range)
+
+        if cmd.type == 'x': # cancel
             return
-        elif direction_or_target[0] == 't':
-            target, (path, blocked) = direction_or_target[1]
-            tx = target.x
-            ty = target.y
-        else:
-            log ('direction here')
-            direction = [direction_or_target[1], direction_or_target[2]]
-            
-            path, blocked = range_direction_path(caster.x, caster.y, self.range, direction, Global.pc.current_level.BlocksPassage)
-
-            # Find the first square along the path where there's an obstacle:
+        elif cmd.type == 't': # target
+            tx = cmd.target.x
+            ty = cmd.target.y
+        elif cmd.type == 'd': # direction
+            direction = cmd.direction
             actual_path = []
-            for x, y in path[1:]:
+            for x, y in cmd.path[1:]:
                 actual_path.append((x, y))
+                tx = x
+                ty = y
                 if caster.current_level.BlocksPassage(x, y):
-                    tx = x
-                    ty = y
                     break
+        else:
+            return
+            
               
         pts = Global.IO.AnimateAreaEffect(tx, ty, self.radius, self.projectile_char, self.projectile_color)
         if len(pts) == 0: return
@@ -266,22 +303,56 @@ class MagicMissile(BoltSpell):
     mp_cost = 1
     range = 5
     damage_type = ""   # unresistable
-    projectile_char, projectile_color = "-|/\\", c_Cyan
+    projectile_char, projectile_color = "-|/\\", c_Red
     desc = lang.spelldesc_magic_missile
     def Damage(self, caster):
         return d("1d3")
-       
-class LightningBall(AreaEffectSpell):
+
+class LightningBolt(BoltSpell):
     name = lang.spellname_lightning_ball
     shortcut = lang.spellcode_lightning_ball
     harmful = True
-    level = 1
-    mp_cost = 1
+    level = 2
+    mp_cost = 3
     range = 5
     damage_type = ""
     radius = 3
     projectile_char, projectile_color = '*', c_Cyan
     desc = lang.spelldesc_lightning_ball
     def Damage(self, caster):
-        return d("1d3")
+        return d("2d3")
+
+
+class MagicBall(AreaEffectSpell):
+    name = lang.spellname_lightning_ball
+    shortcut = lang.spellcode_lightning_ball
+    harmful = True
+    level = 2
+    mp_cost = 3
+    range = 5
+    damage_type = ""
+    radius = 3
+    projectile_char, projectile_color = '*', c_Red
+    desc = lang.spelldesc_lightning_ball
+    def Damage(self, caster):
+        return d("2d3")
+ 
+class LightningBall(AreaEffectSpell):
+    name = lang.spellname_lightning_ball
+    shortcut = lang.spellcode_lightning_ball
+    harmful = True
+    level = 3
+    mp_cost = 7
+    range = 5
+    damage_type = ""
+    radius = 3
+    projectile_char, projectile_color = '*', c_Cyan
+    desc = lang.spelldesc_lightning_ball
+    def Damage(self, caster):
+        return d("4d3")
     
+# TODO: Method for acquiring new spells
+# TODO: Spells that progress by level
+# TODO: Dungeon affect spell (stone to mud, light area, beam of light)
+# TODO: Monster effect spells (sleep, slow)
+

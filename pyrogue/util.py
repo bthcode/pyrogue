@@ -383,12 +383,10 @@ def linear_path(x1, y1, x2, y2, blocked):
         return pretty_path, False
 
 def range_direction_path(x, y, target_range, direction, blocked):
+    '''Calculate the linear path in a given direction'''
     # 1. For direction, calculate destination x and y
-    ctr     = 0
-    x_start = 0
-    y_start = 0
-    x_end   = x_start + target_range * direction[0]
-    y_end   = y_start + target_range * direction[1]
+    x_end   = x + target_range * direction[0]
+    y_end   = y + target_range * direction[1]
     path, blocked = linear_path(x,y, x_end,y_end, blocked)
     return path, blocked
 
