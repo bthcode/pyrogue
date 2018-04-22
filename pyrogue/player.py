@@ -332,38 +332,51 @@ class PlayerCharacter(creatures.Humanoid):
                     ammo = Global.IO.GetChoice(ammos, lang.prompt_which_ammo, nohelp=True)
                     if ammo is None: return  # Player cancelled ammo choice; cancel fire.
                     self.Equip(ammo)
-        # Weapon and ammo are determined; get the target:
-        target, (path, path_clear) = self.GetTarget()
-        if not target:
-            # Player cancelled
+
+
+        # -------- targetting -------- #
+        cmd = Global.IO.GetDirectionOrTarget(self, target_range=bow.range)
+
+        if cmd.type == 'x': # cancel
             return
-        # We have weapon, ammo, and target; time to fire:
-        self.inventory.Remove(ammo, 1)
-        # Find the first square along the path where there's an obstacle:
+        elif cmd.type == 't': # target
+            tx = cmd.target.x
+            ty = cmd.target.y
+        elif cmd.type == 'd': # direction
+            direction = cmd.direction
+        else:
+            return
+
+        # Find the first square along the path where there's an obstacle or we're at max range
         actual_path = []
-        for x, y in path[1:]:
+        target = None
+        for x, y in cmd.path[1:]:
             actual_path.append((x, y))
+            tx = x
+            ty = y
             if self.current_level.BlocksPassage(x, y):
-                # Something here blocks the bolt; see if it's a mob:
                 mob = self.current_level.CreatureAt(x, y)
                 if mob:
                     target = mob
                 break
+
+        path_clear = cmd.blocked
+
         Global.IO.AnimateProjectile((actual_path, path_clear), ammo.projectile_char, ammo.color)
         self.Delay(bow.fire_speed)
-        hit = self.MissileHitBonus()
-        evade = target.EvasionBonus()
-        differential = hit - evade
-        if successful_hit(differential, target.level):
-            # Attack hit; calculate damage:
-            damage_roll = d(ammo.thrown_damage) + ammo.damage_bonus + d(bow.fire_damage) + bow.damage_bonus
-            protection_roll = quantize(target.ProtectionBonus())
-            damage = max(d("1d2"), damage_roll - protection_roll)
-            damage_taken = target.TakeDamage(damage, ammo.damage_type, source=self)
-            report_combat_hit(self, target, damage_taken, bow.verbs, bow.verbs_sp)
-        else:
-            # Missed:
-            report_combat_miss(self, target, bow.verbs, bow.verbs_sp)
+        if target:
+            hit = self.MissileHitBonus()
+            evade = target.EvasionBonus()
+            differential = hit - evade
+            if successful_hit(differential, target.level):
+                # Attack hit; calculate damage:
+                damage_roll = d(ammo.thrown_damage) + ammo.damage_bonus + d(bow.fire_damage) + bow.damage_bonus
+                protection_roll = quantize(target.ProtectionBonus())
+                damage = max(d("1d2"), damage_roll - protection_roll)
+                damage_taken = target.TakeDamage(damage, ammo.damage_type, source=self)
+                report_combat_hit(self, target, damage_taken, bow.verbs, bow.verbs_sp)
+            else:
+                report_combat_miss(self, target, bow.verbs, bow.verbs_sp)
     def FullyRested(self):
         return (True
             and self.hp >= self.hp_max
@@ -871,6 +884,11 @@ class KrolHuman(Archetype):
         weapon = pyro_items.random_melee_weapon(0, pyro_items.BattleAxe, nospecial=True)
         pc.inventory.Pickup(weapon)
         pc.Equip(weapon, silent=True)
+        bow = pyro_items.ShortBow()
+        pc.inventory.Pickup(bow)
+        pc.Equip(bow, silent=True)
+        arrow = pyro_items.WoodArrow()
+        pc.inventory.Pickup(arrow)
         Archetype.__init__(self, pc)
         pc.stats = creatures.Stats(10, 10, 4)
         self.stat_gains = ['str', 'dex', 'any', 'str', 'dex']
