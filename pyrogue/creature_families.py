@@ -144,9 +144,13 @@ class Creature(object):
             self.inventory.Pickup(pyro_items.random_item(int_range(self.level, self.level/4.0, 2)))
     def Attack(self, target):
         ''' TODO: combine melee item into attacks '''
+        log ('Attack!')
+        import pprint; log ('self.attacks = {0}'.format(pprint.pformat(self.attacks)))
         range_to_target = calc_distance(self.x, self.y, target.x, target.y)
         attacks = [ x for x in self.attacks if x[0].range >= range_to_target ]
+        import pprint; log ('attacks = {0}'.format(pprint.pformat(attacks)))
         if not len(attacks): 
+            self.Delay(self.move_speed)
             return
         attack = weighted_choice(attacks)
         if isinstance(attack, magic.BoltSpell):
@@ -154,6 +158,7 @@ class Creature(object):
             attack.Attempt(self, target)
             self.Delay(self.cast_speed)
         else:
+            log ('attempting attack')
             success = attack.Attempt(self, target)
     def GetPathToTarget(self, target):
         return linear_path(self.x, self.y, target.x, target.y,
@@ -164,7 +169,9 @@ class Creature(object):
         range_to_target = calc_distance(self.x, self.y, target.x, target.y)
         for attack in self.attacks:
             if attack[0].range >= range_to_target:
+                log ( 'can attack' )
                 return True
+        log ('cant attack')
         return False
     def CanOccupyTerrain(self, terrain):
         "Return whether the mob can enter a square with the given terrain."

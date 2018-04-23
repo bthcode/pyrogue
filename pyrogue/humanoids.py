@@ -120,4 +120,24 @@ class Ranger(Humanoid):
     move_speed = 100
     desc = """ Bad aragorns."""
     attacks = [[pyro_items.Punch("1d3", 80), 1],[magic.MagicMissile(), 1] ]
-all_humanoids = [scruffy_looking_hobbit,dark_elf,dark_elven_mage,dark_elven_warrior,gnome_mage,dark_elven_priest,dark_elven_lord,dark_elven_druid,mind_flayer,dark_elven_sorcerer,Ranger,]
+class Archer(Humanoid):
+    name = "Archer"
+    tile = "h"
+    level = 2
+    color = c_Blue
+    can_open_doors = True
+    hp_max = 8
+    str, dex, int = 16, 18, 8
+    move_speed = 100
+    desc = """ Bad aragorns."""
+    attacks = []
+    def __init__(self):
+        Humanoid.__init__(self)
+        bow = pyro_items.ShortBow()
+        self.inventory.Pickup(bow)
+        self.Equip(bow)
+        arrow = pyro_items.WoodArrow()
+        self.inventory.Pickup(arrow)
+        self.Equip(arrow)
+
+all_humanoids = [scruffy_looking_hobbit,dark_elf,dark_elven_mage,dark_elven_warrior,gnome_mage,dark_elven_priest,dark_elven_lord,dark_elven_druid,mind_flayer,dark_elven_sorcerer,Ranger,Archer,]

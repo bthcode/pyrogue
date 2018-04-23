@@ -64,6 +64,72 @@ class MeleeAttackType(AttackType):
             report_combat_miss(attacker, target, self.verbs, self.verbs_sp)
             return False
 
+class BowAttackType(AttackType):
+    "Some mode of melee attack."
+    damage_type = "physical"
+    speed       = 100
+    damage      = "1d3"
+    def __init__(self, damage=None, speed=None, range=1):
+        if damage is not None: self.damage = damage
+        if speed is not None: self.speed = speed
+        self.range = range
+    def Attempt(self, attacker, target):
+        '''Attempt this attack on the given target.
+
+        Args:
+            attacker: a Creature
+            target: a Creature
+
+        Returns:
+            true if attack successful, else false 
+        '''
+        attacker.Delay(self.speed)
+        hit = attacker.MeleeHitBonus()
+        evade = target.EvasionBonus()
+        differential = hit - evade
+        chance = hit_chance(differential, target.level)
+        log("%s (%s to hit) attacks %s (%s evade, level %s) with %s%% chance to hit." %
+            (attacker.name, hit, target.name, evade, target.level, int(chance*100)))
+
+        tx, ty = target.x, target.y
+        ax, ay = attacker.x, attacker.y
+        bow = attacker.ItemInSlot(lang.equip_slot_missileweapon)
+        ammo = attacker.ItemsInSlot(lang.equip_slot_ammo)
+
+        path, path_clear = linear_path(ax, ay, tx, ty, Global.pc.current_level.BlocksPassage)
+        if not ammo:
+            return
+        ammo = ammo[0]
+        actual_path = []
+        target = None
+        for x, y in path[1:]:
+            actual_path.append((x, y))
+            tx = x
+            ty = y
+            if Global.pc.current_level.BlocksPassage(x, y):
+                mob = Global.pc.current_level.CreatureAt(x, y)
+                if mob:
+                    target = mob
+                break
+
+        Global.IO.AnimateProjectile((actual_path, path_clear), ammo.projectile_char, ammo.color)
+        if target:
+            hit = attacker.MissileHitBonus()
+            evade = target.EvasionBonus()
+            differential = hit - evade
+            if successful_hit(differential, target.level):
+                # Attack hit; calculate damage:
+                damage_roll = d(ammo.thrown_damage) + ammo.damage_bonus + d(bow.fire_damage) + bow.damage_bonus
+                protection_roll = quantize(target.ProtectionBonus())
+                damage = max(d("1d2"), damage_roll - protection_roll)
+                damage_taken = target.TakeDamage(damage, ammo.damage_type, source=self)
+                report_combat_hit(attacker, target, damage_taken, bow.verbs, bow.verbs_sp)
+                return True
+            else:
+                report_combat_miss(attacker, target, bow.verbs, bow.verbs_sp)
+                return False
+
+
 class DefaultAttack(MeleeAttackType):
     name = "attack"
     verbs = lang.verbs_default_attack
@@ -235,8 +301,16 @@ class MissileWeapon(Weapon):
         pass
 class Bow(MissileWeapon):
     range = 8
+    def __init__(self):
+        MissileWeapon.__init__(self)
+        self.melee_attack = BowAttackType("1d6", 100,self.range)
     def CanFire(self, ammo):
         return isinstance(ammo, Arrow)
+    def OnEquip(self, mob):
+        mob.attacks.append( (self.melee_attack, 10) )
+    def OnUnequip(self, mob):
+        mob.attacks = [ x for x in mob.attacks if x[0] != self.melee_attack ]
+
 
 class Ammunition(Weapon):
     type = lang.itemtype_ammo_or_thrown
@@ -311,6 +385,8 @@ class ShortBow(Bow):
     desc = lang.itemdesc_shortbow
     weight = 3.0
     range  = 8
+
+
 
 # Specific ammunition types:
 class WoodArrow(Arrow):
