@@ -20,7 +20,7 @@ class Global(object):
 ############################ CONSTANTS ##########################
 
 letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-ANIMATION_DELAY = 0.00    # Sleep time in seconds between animation frames
+ANIMATION_DELAY = 0    # Sleep time in seconds between animation frames
 MESSAGE_LOG_SIZE = 200    # Number of messages to keep in the log
 
 # Dungeon layout characters (data, not display, though they may be the same)

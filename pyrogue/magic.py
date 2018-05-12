@@ -128,6 +128,37 @@ Requirements:
         target: go towards target or end of range
     ''' 
     def Attempt(self, caster, target):
+        path, path_clear = caster.GetPathToTarget(target)
+
+        tx = target.x
+        ty = target.y
+        pts = Global.IO.AnimateAreaEffect(tx, ty, self.radius, self.projectile_char, self.projectile_color)
+        if len(pts) == 0: return
+        for pt in pts:
+            target = Global.pc.current_level.CreatureAt(pt[0], pt[1])
+            # Area affect spells only affect other creatures for now
+            if target and target is not caster:
+                damage_taken = target.TakeDamage(self.Damage(caster), type=self.damage_type, source=caster)
+                color = "^Y^"
+                if caster is Global.pc:
+                    cp = "Your"
+                    color = "^G^"
+                else:
+                    cp = lang.ArticleName("The", caster) + "'s"
+                if target is Global.pc:
+                    tp = "you"
+                    color = "^R^"
+                else:
+                    tp = lang.ArticleName("the", target)
+                if Global.pc in (caster, target) or caster.pc_can_see or target.pc_can_see:
+                    Global.IO.Message("%s %s %s%s^0^ %s. [%s%s^0^]" %
+                        (cp, self.name.lower(), color, lang.word_hits, tp, color, damage_taken))
+                if caster is Global.pc and target.dead:
+                    Global.IO.Message(lang.combat_you_killed % 
+                                      (lang.ArticleName("the", target), target.kill_xp))
+               
+        self.AfterCast(caster)
+
         return True
 
     
@@ -147,6 +178,8 @@ Requirements:
         '''
         cmd = Global.IO.GetDirectionOrTarget(caster, target_range=self.range)
 
+        tx, ty = caster.x, caster.y
+
         if cmd.type == 'x': # cancel
             return
         elif cmd.type == 't': # target
@@ -157,10 +190,10 @@ Requirements:
             actual_path = []
             for x, y in cmd.path[1:]:
                 actual_path.append((x, y))
-                tx = x
-                ty = y
                 if caster.current_level.BlocksPassage(x, y):
                     break
+                tx = x
+                ty = y
         else:
             return
             

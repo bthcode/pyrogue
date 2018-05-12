@@ -149,6 +149,7 @@ class IOWrapper(object):
         pts = Global.pc.current_level.fov.Ball(tx, ty, radius, ignore_walls=False)
         for pt in pts:
             self.screen.PutChar(self.message_lines+pt[1], pt[0], "*", color)
+        self.screen.PutChar(self.message_lines + ty,tx, "*", c_Red)
         animation_delay()     
         self.screen.move(Global.pc.y + self.message_lines, Global.pc.x)
         self.screen.refresh()

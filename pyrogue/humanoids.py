@@ -108,7 +108,7 @@ class dark_elven_sorcerer(Humanoid):
     str, dex, int = 12, 18, 18
     move_speed = 130
     desc = """ his slender frame."""
-    attacks = [[pyro_items.Punch("1d3", 80), 1]]
+    attacks = [[pyro_items.Punch("1d3", 80), 1],[magic.LightningBall(), 1]]
 class Ranger(Humanoid):
     name = "Ranger"
     tile = "h"

@@ -37,6 +37,12 @@ Quick Grok
     - Calculates field of view with :class:`~pyrogue.fov.FOVMap`
     - Dungeon maps generated in :class:`~pyrogue.dungeon_gen.Level` 
 
+Level Drawing
+=============
+
+- Player Update method calls drawing method :attr:`~pyrogue.player.PlayerCharacter.Update`
+- Calls self.current_level.Display :attr:`~pyrogue.dungeons.Level.Display`
+
 
 Indices and tables
 ==================

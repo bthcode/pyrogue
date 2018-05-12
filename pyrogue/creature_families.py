@@ -153,7 +153,7 @@ class Creature(object):
             self.Delay(self.move_speed)
             return
         attack = weighted_choice(attacks)
-        if isinstance(attack, magic.BoltSpell):
+        if isinstance(attack, magic.Spell):
             log ('calling cast')
             attack.Attempt(self, target)
             self.Delay(self.cast_speed)
