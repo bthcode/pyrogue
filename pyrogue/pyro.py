@@ -5,6 +5,7 @@ Pyro: PYthon ROguelike by Eric D. Burgess, 2006
 
 # Pyro modules:
 from util import *
+from curses import wrapper
 
 import creatures
 import pyro_items 
@@ -86,11 +87,11 @@ class Game(object):
         
 ############################ MAIN ###############################
 
-def StartGame():
+def StartGame(stdscr):
     ''' Start a new game
     '''
     # Initialize the IO wrapper:
-    Global.IO = io.IOWrapper()
+    Global.IO = io.IOWrapper(stdscr)
     try:
         # Fire it up:
         Global.pyro = Pyro()
@@ -124,6 +125,6 @@ if __name__ == "__main__":
         if not os.path.exists(args.savefile):
             print ("ERROR: Can't find savefile: {0}".format(args.savefile))
             sys.exit(1)
-        LoadGame(args.savefile)
+        wrapper(LoadGame(args.savefile))
     else:
-        StartGame()
+        wrapper(StartGame)

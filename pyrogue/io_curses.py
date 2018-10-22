@@ -1,11 +1,12 @@
-"io_curses.py - IO routines for Pyro, using curses."
-
-# Ideally, this module could be replaced with a tile-graphics or other
-# IO module without changing any of the rest of the Pyro code.
+import curses
+from curses import wrapper
+from curses import panel
 
 from util import *
-import curses
+
 import pyro_items
+
+logfile = open('log.txt', 'w')
 
 OPTIMIZE_OUTPUT = True      # Whether to buffer curses output (False won't work yet)
 MESSAGE_LINES = 2
@@ -87,19 +88,87 @@ class TargettingCommand:
     blocked   = []
 
 
+
+
+class Menu(object):                                                          
+
+    def __init__(self, items, stdscreen):                                    
+        self.window = stdscreen.subwin(0,0)                                  
+        self.window.keypad(1)                                                
+        self.panel = panel.new_panel(self.window)                            
+        self.panel.hide()                                                    
+        panel.update_panels()                                                
+
+        self.position = 0                                                    
+        self.items = items                                                   
+        self.items.append(('exit','exit'))                                   
+
+    def navigate(self, n):                                                   
+        self.position += n                                                   
+        if self.position < 0:                                                
+            self.position = 0                                                
+        elif self.position >= len(self.items):                               
+            self.position = len(self.items)-1                                
+
+    def display(self):                                                       
+        self.panel.top()                                                     
+        self.panel.show()                                                    
+        self.window.clear()                                                  
+
+        while True:                                                          
+            self.window.box()
+            self.window.refresh()                                            
+            curses.doupdate()                                                
+            for index, item in enumerate(self.items):                        
+                if index == self.position:                                   
+                    mode = curses.A_REVERSE                                  
+                else:                                                        
+                    mode = curses.A_NORMAL                                   
+
+                msg = '%d. %s' % (index, item[0])                            
+                self.window.addstr(1+index, 1, msg, mode)                    
+
+            key = self.window.getch()                                        
+
+            if key in [curses.KEY_ENTER, ord('\n')]:                         
+                if self.position == len(self.items)-1:                       
+                    break                                                    
+                else:                                                        
+                    self.items[self.position][1]()                           
+
+            elif key == curses.KEY_UP:                                       
+                self.navigate(-1)                                            
+
+            elif key == curses.KEY_DOWN:                                     
+                self.navigate(1)                                             
+
+        self.window.clear()                                                  
+        self.panel.hide()                                                    
+        panel.update_panels()                                                
+        curses.doupdate()
+
+   
 class IOWrapper(object):
-    "Class to handle all input/output."
-    def __init__(self):
-        "Initialize the IO system."
-        self.width, self.height = 80, 24
-        # Initialize curses:
-        self.screen = curses.initscr()
-        curses.start_color()
-        curses.noecho()
+    def __init__(self, stdscr):
+
+        self.more_prompt = " ^Y^%s^0^" % lang.prompt_more
+        self.any_key_prompt = "^Y^%s^0^" % lang.prompt_any_key
+        self.message_log = []
+        self.attack_ticker = []
+        self.message_wait = False
+        self.tab_targeting = False
+
+        self.stdscr = stdscr
+        self.stdscr.clear()
+        self.screen = stdscr # FIXME
+
+        curses.initscr()
         curses.cbreak()
-        self.screen.keypad(1)
-        curses.curs_set(1)
-        # Set up the color pairs:
+        curses.noecho()
+        self.stdscr.keypad(1)
+        curses.curs_set(0)
+
+        # Colors
         self.colors = [curses.color_pair(0)]
         for i in range(1, 16):
             curses.init_pair(i, i % 8, 0)
@@ -107,32 +176,77 @@ class IOWrapper(object):
                 self.colors.append(curses.color_pair(i))
             else:
                 self.colors.append(curses.color_pair(i) | curses.A_BOLD)
-        # Message area:
-        self.message_lines = 2
-        self.message_position = 0
-        self.more_prompt = " ^Y^%s^0^" % lang.prompt_more
-        self.any_key_prompt = "^Y^%s^0^" % lang.prompt_any_key
-        self.message_log = []
-        self.attack_ticker = []
-        self.message_wait = False
-        self.tab_targeting = False
-        if OPTIMIZE_OUTPUT:
-            # Optimize the screen output:
-            self.screen = OptimizedScreen(self.screen, self.width,
-                                          self.height, self.colors)
+
+
+        # Layout
+        self.msg_height    = 3
+        self.status_height = 3
+        self.stats_width   = 20
+        self.height        = None
+        self.width         = None
+        self.game_height   = None 
+        self.game_width    = None 
+        self.game_start_y  = None 
+        self.game_start_x  = None 
+        # TODO: reset these on new level
+        self.game_ul_x     = -1
+        self.game_ul_y     = -1
+        self.calc_layout()
+
+        # Windows
+        self.msg_win = curses.newwin(self.msg_height, self.width, 0, 0)
+        self.msg_win.addstr(1,1,'msgs')
+        self.msg_win.box()
+        self.msg_win.refresh()
+
+        self.stats_win = curses.newwin(self.game_height, self.stats_width, self.msg_height, 0)
+        self.stats_win.addstr(1,1,'stats')
+        self.stats_win.box()
+        self.stats_win.refresh()
+
+        self.game_win = curses.newwin(self.game_height, self.game_width, self.msg_height, self.stats_width)
+        self.game_win.addstr(1,1,'game')
+        self.game_win.refresh()
+
+        self.status_win = curses.newwin(self.status_height, self.width, self.msg_height+self.game_height, 0)
+        self.status_win.addstr(1,1,'status')
+        self.status_win.box()
+        self.status_win.refresh()
+
+    def calc_layout(self):
+        self.height, self.width = self.stdscr.getmaxyx()
+        self.game_height   = self.height - self.msg_height - self.status_height
+        self.game_width    = self.width - self.stats_width 
+        self.game_start_y  = self.msg_height 
+        self.game_start_x  = self.stats_width 
+
+        self.pad_height = 80
+        self.pad_width  = 180
+        self.pad = curses.newpad(self.pad_height, self.pad_width)
+        #ctr = 0
+        #for y in range(0, self.pad_height-1):
+        #    for x in range(0, self.pad_width-1):
+        #        self.pad.addch(y,x, ord('a') + ctr % 26)
+        #        ctr += 1
+        #self.ul_x = 0
+        #self.ul_y = 0
+        #self.move(self.ul_x, self.ul_y)
+        curses.doupdate()
+        self.pad.touchwin()
+
     def AnimateProjectile(self, path, char, color):
         "Show a projectile traveling the specified path."
         path, clear = path
         for x, y in path:
             ch = "*"
-            self.screen.PutChar(self.message_lines+y, x, ch, color)
+            self.PutChar(y, x, ch, color)
             animation_delay()
-            self.screen.move(Global.pc.y+self.message_lines, Global.pc.x)
-            self.screen.refresh()
+            self.move(Global.pc.y, Global.pc.x)
+            #self.pad.refresh()
         for px, py in path: 
             Global.pc.current_level.PaintSquare(px, py)
-            self.screen.move(Global.pc.y+self.message_lines, Global.pc.x)
-            self.screen.refresh()
+            self.move(Global.pc.y, Global.pc.x)
+            #self.pad.refresh()
     def AnimateAreaEffect(self, tx, ty, radius, char, color):
         '''Show a 'Ball' effect, returning the affected points
 
@@ -148,15 +262,16 @@ class IOWrapper(object):
         '''
         pts = Global.pc.current_level.fov.Ball(tx, ty, radius, ignore_walls=False)
         for pt in pts:
-            self.screen.PutChar(self.message_lines+pt[1], pt[0], "*", color)
-        self.screen.PutChar(self.message_lines + ty,tx, "*", c_Red)
+            self.PutChar(pt[1], pt[0], "*", color)
+        self.PutChar(ty,tx, "*", c_Red)
         animation_delay()     
-        self.screen.move(Global.pc.y + self.message_lines, Global.pc.x)
-        self.screen.refresh()
+        #self.pad.move(Global.pc.y, Global.pc.x)
+        self.pad.refresh()
         for pt in pts:
             Global.pc.current_level.PaintSquare(pt[0], pt[1])
-            self.screen.move(Global.pc.y+self.message_lines, Global.pc.x)
-            self.screen.refresh()
+            #self.pad.move(Global.pc.y, Global.pc.x)
+            #self.pad.refresh()
+            self.move(Global.pc.y, Gobal.pc.x)
         return pts
     def Ask(self, question, opts, attr=c_yellow):
         "Ask the player a question."
@@ -197,8 +312,8 @@ class IOWrapper(object):
         L.append(" ^Y^/^y^ %s" % lang.label_run)
         y = 2
         self.ClearScreen()
-        self.screen.addstr(0, 0, lang.label_help_title.center(self.width-1), hattr)
-        self.screen.addstr(1, 5, lang.label_keyboard_commands, hattr)
+        self.addstr(0, 0, lang.label_help_title.center(self.width-1), self.stdscr,hattr)
+        self.addstr(1, 5, lang.label_keyboard_commands, self.stdscr,hattr)
         special = {9: lang.key_tab}
         for c in pc.commands:
             keys = []
@@ -208,13 +323,13 @@ class IOWrapper(object):
             ckeys = (" ^0^%s^Y^ " % lang.word_or).join(keys)
             cstr = "^Y^%6s^y^ - %s" % (ckeys, c.desc[:32])
             if y < 22:
-                self.screen.addstr_color(y, 0, cstr)
+                self.addstr_color(y, 0, cstr, self.stdscr)
             else:
-                self.screen.addstr_color(11 + y - 22, 40, cstr)
+                self.addstr_color(11 + y - 22, 40, cstr, self.stdscr)
             y += 1
         for line in range(len(L)):
             self.screen.addstr_color(line+1, 44, L[line], c_yellow)
-        self.screen.addstr(self.height-1, 0, lang.prompt_any_key.center(self.width-1), hattr)
+        self.addstr(self.height-1, 0, lang.prompt_any_key.center(self.width-1), self.stdscr,hattr)
         self.GetKey()
         self.ClearScreen()
         return
@@ -251,9 +366,9 @@ class IOWrapper(object):
         L.append("")
         y = 0
         for line in L:
-            self.screen.addstr_color(y, 0, line, c_yellow)
+            self.addstr_color(y, 0, line, c_yellow, self.stdscr)
             y += 1
-        self.screen.addstr_color(y+1, 0, "^Y^%s" % lang.prompt_any_key)
+        self.addstr_color(y+1, 0, "^Y^%s" % lang.prompt_any_key, self.stdscr)
         self.GetKey()
         self.screen.clear()
     def DisplayInventory(self, mob, norefresh=False, equipped=False, types=""):
@@ -269,16 +384,16 @@ class IOWrapper(object):
         if mob.inventory.Num() == 0:
             # No items in the inventory:
             if mob.is_pc:
-                self.screen.addstr(y, 0, lang.error_carrying_nothing, hattr)
+                self.addstr(y, 0, lang.error_carrying_nothing, self.stdscr, hattr)
             else:
-                self.screen.addstr(y, 0, lang.error_mob_carrying_nothing, hattr)
+                self.addstr(y, 0, lang.error_mob_carrying_nothing, self.stdscr, hattr)
             return y+1
         if mob.is_pc:
             weight = lang.label_inventory_weight % (
                 mob.inventory.TotalWeight(), mob.inventory.Capacity())
         else:
             weight = ""
-        self.screen.addstr(y, 0, "%s: %s" % (title, weight), hattr)
+        self.addstr(y, 0, "%s: %s" % (title, weight), self.stdscr, hattr)
         y += 1
         if types == "":
             display_types = pyro_items.types
@@ -289,24 +404,24 @@ class IOWrapper(object):
                         if (equipped and i[0] in mob.equipped)
                         or (not equipped and i[0] not in mob.equipped)]
             if itemlist:
-                self.screen.addstr(y, 0, symbol, sattr)
-                self.screen.addstr(y, 2, "%s:" % type, hattr)
+                self.addstr(y, 0, symbol, self.stdscr, sattr)
+                self.addstr(y, 2, "%s:" % type, self.stdscr, hattr)
                 y += 1
                 for i, letter in itemlist:
                     if i.quantity > 1:
                         qtystr = "%sx " % i.quantity
                     else:
                         qtystr = ""
-                    self.screen.addstr_color(y, 4, "^Y^%s^0^: %s%s" % 
-                                             (letter, qtystr, i.Name()), lattr)
+                    self.addstr_color(y, 4, "^Y^%s^0^: %s%s" % 
+                                             (letter, qtystr, i.Name()), self.stdscr, lattr)
                     y += 1
         return y
     def DisplayText(self, text, attr=c_white):
         "Display multiline text (\n separated) and wait for a keypress."
         self.ClearScreen()
         text = "\n".join(wrap(text, self.width-2))
-        y = self.screen.addstr_color(0, 0, text, attr)
-        self.screen.addstr_color(y+1, 0, lang.prompt_any_key, c_Yellow)
+        y = self.addstr_color(0, 0, text, self.stdscr, attr)
+        self.addstr_color(y+1, 0, lang.prompt_any_key, self.stdscr, c_Yellow)
         self.GetKey()
         self.ClearScreen()
     def DrawPathToTarget(self):
@@ -321,9 +436,10 @@ class IOWrapper(object):
         "Called right before input is taken from the player."
         # Put the cursor on the @:
         if self.tab_targeting and Global.pc.target:
-            self.screen.move(MESSAGE_LINES + Global.pc.target.y, Global.pc.target.x)
+            #self.pad.move(Global.pc.target.y, Global.pc.target.x)
+            self.move(Global.pc.target.y, Global.pc.target.x)
         else:
-            self.screen.move(MESSAGE_LINES + Global.pc.y, Global.pc.x)
+            self.move(Global.pc.y, Global.pc.x)
     def GetChoice(self, item_list, prompt="Choose one: ", nohelp=False, nocancel=True):
         "Allow the player to choose from a list of options with descriptions."
         # item_list must be a list of objects with attributes 'name' and 'desc'.
@@ -356,7 +472,7 @@ class IOWrapper(object):
                     self.ClearScreen()
                     y = 0
                     for line in wrap(item_list[letters.index(r)].desc, self.width-1):
-                        self.screen.addstr(y, 0, line, c_yellow)
+                        self.addstr(y, 0, line, c_yellow, self.stdscr)
                         y += 1
                     self.WaitPrompt(y, c_Yellow)
         self.screen.clear()
@@ -366,7 +482,7 @@ class IOWrapper(object):
         return choice
     def GetDirection(self):
         "Ask the player for a direction."
-        self.screen.addstr(0, 0, lang.prompt_which_direction)
+        self.addstr(0, 0, lang.prompt_which_direction, self.stdscr)
         while True:
             k = self.GetKey()
             if k in range(49, 58):
@@ -384,7 +500,7 @@ class IOWrapper(object):
             elif k in [ SPC, ESC ]:
                 r = None, None, None
                 break
-        self.screen.addstr(0, 0, " " * self.width)
+        self.addstr(0, 0, " " * self.width, self.stdscr)
         return r
     def GetDirectionOrTarget(self, caster, target_range=None):
         '''Return a direction or a target for targetting.
@@ -438,7 +554,7 @@ class IOWrapper(object):
                 else:
                     cmd.type = 'x'
                 break
-        self.screen.addstr(0, 0, " " * self.width)
+        self.addstr(0, 0, " " * self.width, self.stdscr)
         return cmd
        
     def GetItemFromInventory(self, mob, prompt=None, equipped=False, types="", notoggle=False):
@@ -449,7 +565,7 @@ class IOWrapper(object):
         while True:
             if mob.inventory.Num() == 0: 
                 y = self.DisplayInventory(mob, norefresh=True)
-                self.screen.addstr(y, 0, lang.prompt_any_key, hattr)
+                self.addstr(y, 0, lang.prompt_any_key, self.stdscr, hattr)
                 item = None
                 self.GetKey()
                 break
@@ -505,7 +621,7 @@ class IOWrapper(object):
         prompt = "%s (%s)" % (prompt, lang.prompt_enter_select_space_cancel)
         self.screen.addstr_color(0, 0, prompt, c_yellow)
         while True:
-            self.screen.move(self.message_lines+y, x)
+            self.move(y, x)
             k = self.GetKey()
             dx, dy = 0, 0
             if k in range(49, 58):
@@ -520,12 +636,12 @@ class IOWrapper(object):
                 break
             x = max(0, min(x+dx, Global.pc.current_level.width-1))
             y = max(0, min(y+dy, Global.pc.current_level.height-1))
-        self.screen.addstr(0, 0, " " * self.width)
+        self.addstr(0, 0, " " * self.width, self.stdscr)
         return r
     def GetMonsterChoice(self, prompt):
         monster = Global.IO.GetString(prompt,  noblank=True,
                                         pattr=c_yellow, iattr=c_Yellow)
-        self.screen.clearline(0)
+        self.clearline(0, self.stdscr)
         return monster
     def GetQuantity(self, max_qty=None, prompt="How many?"):
         if max_qty:
@@ -535,7 +651,7 @@ class IOWrapper(object):
         qstr = "[%s*=all, blank=cancel]" % range
         prompt = "%s %s: " % (prompt, qstr)
         qty = self.GetString(prompt, 0, 0, mask="0123456789*")
-        self.screen.clearline(0)
+        self.clearline(0, self.stdscr)
         if qty == "*":
             return max_qty
         elif qty == "":
@@ -551,7 +667,7 @@ class IOWrapper(object):
             return qty
     def GetSpell(self):
         "Ask the player to choose a spell."
-        self.screen.clearline(0)
+        self.clearline(0, self.stdscr)
         spells = Global.pc.spells
         if not spells:
             self.Message(lang.error_no_spells_known)
@@ -564,10 +680,10 @@ class IOWrapper(object):
             k = chr(self.GetKey()).lower()
             if k in "abcdefghijklmnopqrstuvwxyz0123456789":
                 shortcut += k
-                self.screen.addstr(0, plen + 1, shortcut.ljust(5), c_Yellow)
-                self.screen.move(0, plen + len(shortcut) + 1)
+                self.addstr(0, plen + 1, shortcut.ljust(5), self.stdscr, c_Yellow)
+                self.move(0, plen + len(shortcut) + 1, self.stdscr)
             elif k == ' ':
-                self.screen.clearline(0)
+                self.clearline(0, self.stdscr)
                 return None
             elif k in (chr(10), chr(13)):
                 shortcut = Global.pc.last_spell
@@ -580,7 +696,7 @@ class IOWrapper(object):
                     return None
                 else:
                     shortcut = spells[letters.index(r)].shortcut
-        self.screen.clearline(0)
+        self.clearline(0, self.stdscr)
         try:
             spell = [s for s in spells if s.shortcut == shortcut][0]
         except IndexError:
@@ -592,7 +708,7 @@ class IOWrapper(object):
         "Prompt the user for a string and return it."
         mask = mask or " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"
         str = ""
-        self.screen.addstr(y, x, prompt, pattr)
+        self.addstr(y, x, prompt, self.stdscr, pattr)
         x += len(prompt)
         while True:
             self.screen.move(y, x + len(str))
@@ -609,7 +725,7 @@ class IOWrapper(object):
                         return str
                     else:
                         return str.strip()
-            self.screen.addstr(y, x, str+" ", iattr)
+            self.addstr(y, x, str+" ", self.stdscr, iattr)
     def GetTarget(self, prompt=lang.prompt_choose_target, LOS=True, target=None, target_range=None):
         """Ask the player to target a mob.
 
@@ -648,7 +764,7 @@ class IOWrapper(object):
                 if not Global.pc.current_level.fov.Lit(x, y):
                     path = []
                 for i, j in path[1:]:
-                    self.screen.PutChar(j+self.message_lines, i, "*", color)
+                    self.PutChar(j, i, "*", self.pad, color) 
                 if mob:
                     # Repaint the last square if a mob is there, so the target
                     # path doesn't obscure it:
@@ -666,9 +782,9 @@ class IOWrapper(object):
             else:
                 name = "nothing"
             prompt = lang.prompt_choose_target2 % name
-            self.screen.clearline(0)
-            self.screen.addstr_color(0, 0, prompt)
-            self.screen.move(self.message_lines+y, x)
+            self.clearline(0, self.stdscr)
+            self.addstr_color(0, 0, prompt, self.stdcr)
+            self.move(y, x)
             k = self.GetKey()
             dx, dy = 0, 0
             if k in range(49, 58):
@@ -693,8 +809,8 @@ class IOWrapper(object):
                 if mob: break
             x = max(0, min(x+dx, Global.pc.current_level.width-1))
             y = max(0, min(y+dy, Global.pc.current_level.height-1))
-        self.screen.addstr(0, 0, " " * self.width)
-        self.screen.addstr(1, 0, " " * self.width)
+        self.addstr(0, 0, " " * self.width, self.stdscr)
+        self.addstr(1, 0, " " * self.width, self.stdscr)
         for i, j in path:
             Global.pc.current_level.PaintSquare(i, j)
         return mob, (path, clear)
@@ -719,7 +835,7 @@ class IOWrapper(object):
         prompt = prompt.replace('$opts$', "[%s]" % ", ".join(disp_opts))
         self.ClearScreen()
         if question:
-            self.screen.addstr(y, x, question, prompt_attr)
+            self.addstr(y, x, question, self.stdscr, prompt_attr)
             y += 1
         max_y = 0
         for i in range(num):
@@ -737,8 +853,8 @@ class IOWrapper(object):
                 max_item_width = self.width - x - 4
                 X = x
                 Y = y + i
-            self.screen.addstr(int(Y), int(X), letters[i], key_attr)
-            self.screen.addstr(int(Y), int(X)+1, " - %s" % items[i][:max_item_width], attr)
+            self.addstr(int(Y), int(X), letters[i], self.stdscr, key_attr)
+            self.addstr(int(Y), int(X)+1, " - %s" % items[i][:max_item_width], self.stdscr, attr)
             max_y = max(max_y, Y)
         self.screen.addstr(max_y+1, x, prompt, prompt_attr)
         while True:
@@ -761,17 +877,17 @@ class IOWrapper(object):
         self.screen.clear()
         for i in range(1, min(len(self.message_log)+1, self.height)):
             msg, attr = self.message_log[-i]
-            self.screen.addstr_color(self.height - i - 1, 0, msg, attr)
-        self.screen.addstr_color(self.height-1, 0, lang.prompt_any_key, c_Yellow)
+            self.addstr_color(self.height - i - 1, 0, msg, self.stdscr, attr)
+        self.addstr_color(self.height-1, 0, lang.prompt_any_key, self.stdscr, c_Yellow)
         self.GetKey()
         self.screen.clear()
     def MorePrompt(self):
         if self.messages_displayed > 1:
-            self.screen.addstr(1, self.width-7, lang.prompt_more, c_Yellow)
+            self.addstr(1, self.width-7, lang.prompt_more, self.stdscr, c_Yellow)
             self.GetKey()
             self.messages_displayed = 0
-            self.screen.addstr(0, 0, " " * self.width)
-            self.screen.addstr(1, 0, " " * self.width)
+            self.addstr(0, 0, " " * self.width, self.stdscr)
+            self.addstr(1, 0, " " * self.width, self.stdscr)
     def NearbyMobCycler(self, target_range=None):
         "Return a Cycler instance for mobs near the PC."
         # Build a list of targetable mobs:
@@ -787,10 +903,10 @@ class IOWrapper(object):
         targets.sort(key=lambda m: (m[0].x-Global.pc.x)**2 + (m[0].y-Global.pc.y)**2)
         return Cycler(targets)
     def PutTile(self, x, y, tile, color):
-        self.screen.PutChar(y+MESSAGE_LINES, x, tile, color)
+        self.PutChar(y, x, tile, color)
     def ShowMessage(self, msg, attr, nowait, forcewait):
         self.MorePrompt()
-        self.screen.addstr_color(self.messages_displayed, 0, msg, attr)
+        self.addstr_color(self.messages_displayed, 0, msg, self.stdscr, attr)
         self.wait_x = clen(msg) + 1
         if nowait:
             self.screen.refresh()
@@ -831,8 +947,10 @@ class IOWrapper(object):
                                       lang.word_evasion_abbr.title(), p.EvasionBonus())
         dlvl = "%s:%s" % (lang.word_dungeonlevel_abbr, p.current_level.depth)
         line = "%s  %s%s  %s  %s" % (stats, hp, mp, armor, dlvl)
-        self.screen.addstr(MESSAGE_LINES+p.current_level.height, 0, " " * self.width)
-        self.screen.addstr_color(MESSAGE_LINES+p.current_level.height, 0, line)
+        status_lines = []
+        status_lines.append(line)
+        #self.screen.addstr(MESSAGE_LINES+p.current_level.height, 0, " " * self.width)
+        #self.screen.addstr_color(MESSAGE_LINES+p.current_level.height, 0, line)
         if Global.pc.target:
             target = Global.pc.target.Name().title()
             target_color = "^Y^"
@@ -840,8 +958,10 @@ class IOWrapper(object):
             target = lang.word_none.title()
             target_color = "^0^"
         line = "%s: %s%s^0^" % (lang.word_target.title(), target_color, target)
-        self.screen.addstr(MESSAGE_LINES+p.current_level.height+1, 0, " " * self.width)
-        self.screen.addstr_color(MESSAGE_LINES+p.current_level.height+1, 0, line)        
+        #self.screen.addstr(MESSAGE_LINES+p.current_level.height+1, 0, " " * self.width)
+        #self.screen.addstr_color(MESSAGE_LINES+p.current_level.height+1, 0, line)        
+        status_lines.append(line)
+        self.set_status(status_lines)
     def Shutdown(self):
         "Shut down the IO system."
         # Restore the terminal settings:
@@ -864,14 +984,14 @@ class IOWrapper(object):
         self.Message("%s: ^Y^%s%s" % (lang.label_now_targeting, mob.Name().title(), blocked))
         Global.pc.target = mob
     def WaitPrompt(self, y, attr=c_white, prompt=lang.prompt_any_key):
-        self.screen.addstr(y, 0, prompt, attr)
+        self.addstr(y, 0, prompt, self.stdscr, attr)
         self.GetKey()
     def YesNo(self, question, attr=c_yellow):
         "Ask the player a yes or no question."
         self.MorePrompt()
-        self.screen.addstr(0, 0, " " * self.width)
-        self.screen.addstr(0, 0, "%s [%s/%s]: " % 
-                           (question, lang.word_yes_key, lang.word_no_key), attr)
+        self.addstr(0, 0, " " * self.width, self.stdscr)
+        self.addstr(0, 0, "%s [%s/%s]: " % 
+                           (question, lang.word_yes_key, lang.word_no_key), self.stdscr, attr)
         yes_keys = lang.word_yes_key.upper() + lang.word_yes_key.lower()
         no_keys = lang.word_no_key.upper() + lang.word_no_key.lower()
         while True:
@@ -882,23 +1002,27 @@ class IOWrapper(object):
             elif k in no_keys:
                 answer = False
                 break
-        self.screen.addstr(0, 0, " " * self.width)
+        self.addstr(0, 0, " " * self.width, self.stdscr)
         self.messages_displayed = 0
         return answer
-                
-class OptimizedScreen(object):
-    "Optimized (buffered) wrapper for curses screen."
-    def __init__(self, screen, width, height, colors):
-        self.screen, self.width, self.height = screen, width, height
-        self.colors = colors
-        self.clear()
-    def addstr(self, y, x, s, attr=c_yellow):
+
+
+
+
+    def set_status(self, lines):
+        for idx, line in enumerate(lines):
+            self.addstr_color(idx+1,1,' ' * len(line), self.status_win)
+            self.addstr_color(idx+1,1,line, self.status_win)
+        self.status_win.refresh()
+
+    def addstr(self, y, x, s, win, attr=c_yellow):
         strs = s.split("\n")
         for s in strs:
-            self.screen.addstr(y, x, s, self.colors[attr])
+            win.addstr(y, x, s, self.colors[attr])
             y += 1
         return y - 1
-    def addstr_color(self, y, x, text, attr=c_yellow):
+
+    def addstr_color(self, y, x, text, win,  attr=c_yellow):
         "addstr with embedded color code support."
         # Color codes are ^color^, for instance,
         # "This is ^R^red text^W^ and this is white."
@@ -909,7 +1033,7 @@ class OptimizedScreen(object):
             if ch == "^":
                 if text[:2] == "0^":
                     text = text[2:]
-                    y = self.addstr(y, x, buff, attr)
+                    y = self.addstr(y, x, buff, win, attr)
                     x += len(buff)
                     buff, ch = "", ""
                     attr = base_attr
@@ -918,7 +1042,7 @@ class OptimizedScreen(object):
                     code = "%s^" % color
                     if text[:2] == code:
                         text = text[2:]
-                        y = self.addstr(y, x, buff, attr)
+                        y = self.addstr(y, x, buff, win, attr)
                         x += len(buff)
                         buff, ch = "", ""
                         attr = msg_colors[color]
@@ -928,33 +1052,127 @@ class OptimizedScreen(object):
             else:
                 buff += ch
         if buff:
-            y = self.addstr(y, x, buff, attr)
+            y = self.addstr(y, x, buff, win, attr)
         return y
+
+
+    '''
+    def handle_input(self):
+        while 1:
+            key = self.stdscr.getch()
+            if key == ord('q'):
+                break
+            elif key == ord('u'):
+                self.ul_y = min(self.pad_height-self.game_height, self.ul_y+10)
+                self.move(self.ul_x, self.ul_y)
+            elif key == ord('d'):
+                self.ul_y = max(0, self.ul_y-10)
+                self.move(self.ul_x, self.ul_y)
+            elif key == ord('r'):
+                self.ul_x = min(self.pad_width-self.game_width, self.ul_x+10)
+                self.move(self.ul_x, self.ul_y)
+            elif key == ord('l'):
+                self.ul_x = max(0, self.ul_x-10)
+                self.move(self.ul_x, self.ul_y)
+            elif key == ord('m'):
+
+                submenu_items = [                                                    
+                        ('beep', curses.beep),                                       
+                        ('flash', curses.flash)                                      
+                        ]                                                            
+                submenu = Menu(submenu_items, stdscr)                           
+
+                main_menu_items = [                                                  
+                        ('beep', curses.beep),                                       
+                        ('flash', curses.flash),                                     
+                        ('submenu', submenu.display)                                 
+                        ]                              
+                main_menu = Menu(main_menu_items, self.stdscr)                       
+                main_menu.display()
+
+                # Redraw
+                self.msg_win.touchwin()
+                self.status_win.touchwin()
+                self.stats_win.touchwin()
+                self.stats_win.refresh()
+                self.msg_win.refresh()
+            lines = [ 'x = ^R^{0}, ^0^y = ^G^{1}'.format(self.ul_x,self.ul_y) ]
+            self.set_status(lines)
+        curses.doupdate()
+        pad.touchwin()
+    '''
     def clear(self):
         self.dattr = self.colors[0]
         self.chars = [[" "] * self.width for i in range(self.height)]
         self.attrs = [[self.colors[0]] * self.width for i in range(self.height)]
         self.cursor = [0, 0]
-        self.screen.clear()
-        self.screen.refresh()
+        self.pad.clear()
+        self.pad.refresh(0,0,1,1,40,78)
         Global.FullDungeonRefresh = True
-    def clearline(self, lines):
+        for win in [ self.msg_win, self.status_win, self.stats_win ]:
+            win.refresh()
+    def clearline(self, lines, win):
         "Clear one or more lines."
         try:
             for line in lines:
-                self.addstr(line, 0, ' ' * self.width, c_white)
+                self.addstr(line, 0, ' ' * self.width, win, c_white)
         except TypeError:
-            self.addstr(lines, 0, ' ' * self.width, c_white)
+            self.addstr(lines, 0, ' ' * self.width, win, c_white)
     def getch(self):
         return self.screen.getch()
     def keypad(self, arg):
         return self.screen.keypad(arg)
-    def move(self, y, x):
-        self.cursor = [y, x]
-        self.screen.move(y, x)
+    def move(self, x, y):
+        x,y = Global.pc.x, Global.pc.y
+        x_step = self.game_width  // 2
+        y_step = self.game_height // 2
+        logfile.write('move x={0}, y={1}, game_ul_x={2}, game_ul_y={3}, x_step={4}, y_step={5}\n'.format(x, y, self.game_ul_x, self.game_ul_y, x_step, y_step))
+
+        adj_x = max(x - self.game_width  // 2, 0)
+        adj_y = max(y - self.game_height // 2, 0)
+        
+        if self.game_ul_x == -1 or self.game_ul_y == -1:
+            # initial center
+            y, x = adj_y, adj_x
+            self.game_ul_x = x; self.game_ul_y = y
+        else:
+            if x - self.game_ul_x < 5: 
+                self.game_ul_x = max(self.game_ul_x - x_step, 0)
+                logfile.write('1\n')
+            elif (self.game_ul_x+self.game_width) - x < 5:
+                #try to move right
+                self.game_ul_x = min(self.game_ul_x + x_step, self.pad_width-self.game_width)
+                logfile.write('2\n')
+            if y - self.game_ul_y < 5:
+                # try to move up
+                self.game_ul_y = max(self.game_ul_y - y_step, 0)
+                logfile.write('3\n')
+            elif (self.game_ul_y+self.game_height) - y < 5:
+                # try to move down
+                self.game_ul_y = min(self.game_ul_y + y_step, self.pad_height-self.game_height)
+                logfile.write('4\n')
+            
+        logfile.write('--> x={0}, y={1}\n'.format(x, y))
+        logfile.write('--> x={0}, y={1}\n'.format(self.game_ul_x, self.game_ul_y))
+        
+        self.pad.refresh(  self.game_ul_y, self.game_ul_x,
+                           self.game_start_y, self.game_start_x,
+                           self.game_start_y + self.game_height-2, 
+                           self.game_start_x + self.game_width-2 )
+        curses.doupdate()
+        self.pad.touchwin()
+
     def PutChar(self, y, x, ch, attr):
         if True or self.chars[y][x] != ch or self.attrs[y][x] != attr:
-            self.addstr(y, x, ch, attr)                
+            self.pad.addstr(y, x, ch, attr)                
     def refresh(self):
-        self.screen.refresh()
-        return
+        self.pad.refresh(0,0,1,1,40,78)
+        for win in [ self.msg_win, self.status_win, self.stats_win ]:
+            win.refresh()
+
+def main(stdscr):
+    G = gui(stdscr)
+    G.handle_input()
+
+if __name__ == '__main__':
+    wrapper(main)

@@ -244,11 +244,11 @@ class Effect(object):
         pass    # Implement this in subclass
     def Overrides(self, other):
         "Return whether this effect should override the other."
-        if this.type != other.type: return False
-        if this.power > other.power: return True           # higher power always overrides
+        if self.type != other.type: return False 
+        if self.power > other.power: return True           # higher power always overrides
         if other.expiration is None: return False          # other is permanent; leave it
-        if this.expiration is None: return True            # this is perm, other isn't; override
-        if this.expiration > other.expiration: return True # longer duration, all else equal; override
+        if self.expiration is None: return True            # this is perm, other isn't; override
+        if self.expiration > other.expiration: return True # longer duration, all else equal; override
         return False
     def Remove(self, target, silent=False):
         "Remove the effect from the target."
