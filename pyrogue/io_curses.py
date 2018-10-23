@@ -6,7 +6,6 @@ from util import *
 
 import pyro_items
 
-logfile = open('log.txt', 'w')
 
 OPTIMIZE_OUTPUT = True      # Whether to buffer curses output (False won't work yet)
 MESSAGE_LINES = 2
@@ -430,7 +429,7 @@ class IOWrapper(object):
         else:
             color = c_red
         for x, y in self.path[1:-1]:
-            self.screen.PutChar(y+MESSAGE_LINES, x, "*", color)
+            self.PutChar(y, x, "*", color)
             Global.pc.current_level.Dirty(x, y)
     def EndTurn(self):
         "Called right before input is taken from the player."
@@ -1126,7 +1125,6 @@ class IOWrapper(object):
         x,y = Global.pc.x, Global.pc.y
         x_step = self.game_width  // 2
         y_step = self.game_height // 2
-        logfile.write('move x={0}, y={1}, game_ul_x={2}, game_ul_y={3}, x_step={4}, y_step={5}\n'.format(x, y, self.game_ul_x, self.game_ul_y, x_step, y_step))
 
         adj_x = max(x - self.game_width  // 2, 0)
         adj_y = max(y - self.game_height // 2, 0)
@@ -1138,22 +1136,16 @@ class IOWrapper(object):
         else:
             if x - self.game_ul_x < 5: 
                 self.game_ul_x = max(self.game_ul_x - x_step, 0)
-                logfile.write('1\n')
             elif (self.game_ul_x+self.game_width) - x < 5:
                 #try to move right
                 self.game_ul_x = min(self.game_ul_x + x_step, self.pad_width-self.game_width)
-                logfile.write('2\n')
             if y - self.game_ul_y < 5:
                 # try to move up
                 self.game_ul_y = max(self.game_ul_y - y_step, 0)
-                logfile.write('3\n')
             elif (self.game_ul_y+self.game_height) - y < 5:
                 # try to move down
                 self.game_ul_y = min(self.game_ul_y + y_step, self.pad_height-self.game_height)
-                logfile.write('4\n')
             
-        logfile.write('--> x={0}, y={1}\n'.format(x, y))
-        logfile.write('--> x={0}, y={1}\n'.format(self.game_ul_x, self.game_ul_y))
         
         self.pad.refresh(  self.game_ul_y, self.game_ul_x,
                            self.game_start_y, self.game_start_x,
@@ -1164,7 +1156,7 @@ class IOWrapper(object):
 
     def PutChar(self, y, x, ch, attr):
         if True or self.chars[y][x] != ch or self.attrs[y][x] != attr:
-            self.pad.addstr(y, x, ch, attr)                
+            self.pad.addstr(y, x, ch, curses.color_pair(attr))                
     def refresh(self):
         self.pad.refresh(0,0,1,1,40,78)
         for win in [ self.msg_win, self.status_win, self.stats_win ]:
