@@ -1,6 +1,7 @@
 "magic.py - Magic spells and effects for Pyro"
 
 from util import *
+from io_curses import *
 
 class Spell(object):
     def AfterCast(self, caster):
@@ -56,6 +57,7 @@ class BoltSpell(Spell):
         return True
 
     
+    @TraceCalls(logfile)
     def Cast(self, caster):
         '''Cast a ball spell at a target.  
 
@@ -226,6 +228,28 @@ Requirements:
         self.AfterCast(caster)
 
 
+class TeleportSpell(Spell):
+    'spells that move the caster'
+    harmful = False
+    def Cast(self, caster):
+        # 1. find a random spot in radius (will be used for a lot of spells)
+        i,j = caster.current_level.GetRandomPosNear(caster.x, caster.y, self.radius)
+        # 2. move the player there
+        if i != None:
+            caster.current_level.MoveCreature(caster, i, j)
+
+    def Attempt(self, caster, target):
+        # 1. find a random spot in radius (will be used for a lot of spells)
+        i,j = caster.current_level.GetRandomPosNear(caster.x, caster.y, self.radius)
+        # 2. move the player there
+        if i != None:
+            caster.current_level.MoveCreature(caster, i, j)
+            Global.IO.Message("%s blinks" % lang.ArticleName("the", caster) ) 
+
+
+
+
+
 class SelfBuffSpell(Spell):
     "Spells that confer a temporary effect upon the caster."
     harmful = False
@@ -328,6 +352,28 @@ class AgilitySpell(SelfBuffSpell):
     def Effect(self, caster):
         return DexBuff(2)
 
+class Blink(TeleportSpell):
+    name = lang.spellname_blink
+    shortcut = 'bnk'
+    harmful = False
+    range = 999 # affects CanAttack
+    level = 2
+    mp_cost = 3
+    radius = 5
+    desc = lang.spelldesc_blink
+
+class Teleport(TeleportSpell):
+    name = lang.spellname_teleport
+    shortcut = 'tpt'
+    harmful = False
+    range = 999 # affects CanAttack
+    level = 11 
+    mp_cost = 11
+    radius = 999
+    desc = lang.spelldesc_teleport
+
+
+
 class MagicMissile(BoltSpell):
     name = lang.spellname_magic_missile
     shortcut = lang.spellcode_magic_missile
@@ -342,31 +388,59 @@ class MagicMissile(BoltSpell):
         return d("1d3")
 
 class LightningBolt(BoltSpell):
-    name = lang.spellname_lightning_ball
-    shortcut = lang.spellcode_lightning_ball
+    name = lang.spellname_lightning_bolt
+    shortcut = lang.spellcode_lightning_bolt
     harmful = True
     level = 2
     mp_cost = 3
     range = 5
     damage_type = ""
-    radius = 3
+    radius = 1
     projectile_char, projectile_color = '*', c_Cyan
-    desc = lang.spelldesc_lightning_ball
+    desc = lang.spelldesc_lightning_bolt
     def Damage(self, caster):
         return d("2d3")
 
+class IceBolt(BoltSpell):
+    name = lang.spellname_ice_bolt
+    shortcut = lang.spellcode_ice_bolt
+    harmful = True
+    level = 3
+    mp_cost = 5
+    range = 5
+    damage_type = ""
+    radius = 1
+    projectile_char, projectile_color = '*', c_White
+    desc = lang.spelldesc_ice_bolt
+    def Damage(self, caster):
+        return d("3d3")
+
+class FireBolt(BoltSpell):
+    name = lang.spellname_fire_bolt
+    shortcut = lang.spellcode_fire_bolt
+    harmful = True
+    level = 4
+    mp_cost = 7
+    range = 5
+    damage_type = ""
+    radius = 1
+    projectile_char, projectile_color = '*', c_Red
+    desc = lang.spelldesc_fire_bolt
+    def Damage(self, caster):
+        return d("3d3")
+
 
 class MagicBall(AreaEffectSpell):
-    name = lang.spellname_lightning_ball
-    shortcut = lang.spellcode_lightning_ball
+    name = lang.spellname_magic_ball
+    shortcut = lang.spellcode_magic_ball
     harmful = True
     level = 2
     mp_cost = 3
     range = 5
     damage_type = ""
     radius = 3
-    projectile_char, projectile_color = '*', c_Red
-    desc = lang.spelldesc_lightning_ball
+    projectile_char, projectile_color = '*', c_Yellow
+    desc = lang.spelldesc_magic_ball
     def Damage(self, caster):
         return d("2d3")
  
@@ -383,6 +457,37 @@ class LightningBall(AreaEffectSpell):
     desc = lang.spelldesc_lightning_ball
     def Damage(self, caster):
         return d("4d3")
+
+class IceBall(AreaEffectSpell):
+    name = lang.spellname_ice_ball
+    shortcut = lang.spellcode_ice_ball
+    harmful = True
+    level = 7
+    mp_cost = 11
+    range = 5
+    damage_type = ""
+    radius = 3
+    projectile_char, projectile_color = '*', c_White
+    desc = lang.spelldesc_ice_ball
+    def Damage(self, caster):
+        return d("5d3")
+ 
+class FireBall(AreaEffectSpell):
+    name = lang.spellname_fire_ball
+    shortcut = lang.spellcode_fire_ball
+    harmful = True
+    level = 9
+    mp_cost = 15
+    range = 5
+    damage_type = ""
+    radius = 3
+    projectile_char, projectile_color = '*', c_Red
+    desc = lang.spelldesc_fire_ball
+    def Damage(self, caster):
+        return d("6d3")
+
+
+ 
     
 # TODO: Method for acquiring new spells
 # TODO: Spells that progress by level

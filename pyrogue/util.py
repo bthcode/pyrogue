@@ -48,6 +48,8 @@ c_Magenta = curses.COLOR_MAGENTA + 8
 c_Red = curses.COLOR_RED + 8
 c_White = curses.COLOR_WHITE + 8
 c_Yellow = curses.COLOR_YELLOW + 8
+c_Purple = curses.COLOR_MAGENTA + 8
+c_Orange = curses.COLOR_RED + 8
 
 colors = {
     'black':        c_black,

@@ -15,7 +15,7 @@ def temp_tiles(num):
 STEP = False
 
 class Level(object):
-    def __init__(self, level_width = 179, level_height = 79,
+    def __init__(self, level_width = 149, level_height = 29,
                  room_min_width = 5, room_max_width = 11,
                  room_min_height = 3, room_max_height = 6, 
                  room_separation = 1, max_passages = 3,

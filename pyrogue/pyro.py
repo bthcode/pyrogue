@@ -12,6 +12,7 @@ import pyro_items
 import player
 import dungeons
 import io_curses as io
+from io_curses import *
 
 import os
 import sys
@@ -40,7 +41,7 @@ class Pyro(object):
         '''
         Main while loop running the game 
         '''
-        Global.IO.ClearScreen()
+        #Global.IO.ClearScreen()
         try:
             while True:
                 self.game.Update()
@@ -91,11 +92,14 @@ def StartGame(stdscr):
     ''' Start a new game
     '''
     # Initialize the IO wrapper:
+    #Global.IO = io.IOWrapper()
     Global.IO = io.IOWrapper(stdscr)
     try:
         # Fire it up:
         Global.pyro = Pyro()
         Global.pyro.Run()
+    except KeyboardInterrupt:
+        Global.IO.Shutdown()
     finally:
         Global.IO.Shutdown()
 
@@ -128,3 +132,4 @@ if __name__ == "__main__":
         wrapper(LoadGame(args.savefile))
     else:
         wrapper(StartGame)
+            

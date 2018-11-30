@@ -302,10 +302,48 @@ class English(object):
     
     spellcode_agility = "agi"
     spellcode_magic_missile = "mis"
-    spellcode_lightning_ball = "lba"
 
+    # Bolts
+    spellcode_lightning_bolt = "lbt"
+    spellname_lightning_bolt = "Lightning Bolt"
+    spelldesc_lightning_bolt = "A bolt of lightning"
+
+    spellcode_ice_bolt = "ibt"
+    spellname_ice_bolt = "Ice Bolt"
+    spelldesc_ice_bolt = "A bolt of ice"
+
+    spellcode_fire_bolt = "fbt"
+    spellname_fire_bolt = "Fire Bolt"
+    spelldesc_fire_bolt = "A bolt of fire"
+
+    # Balls
+    spellcode_magic_ball = "mba"
+    spellname_magic_ball = "Magic Ball"
+    spelldesc_magic_ball = "A ball of magic, radius=3"
+
+    spellcode_lightning_ball = "lba"
     spellname_lightning_ball = "Lightning Ball"
     spelldesc_lightning_ball = "A ball of lightning, radius=3"
+
+    spellcode_ice_ball = "ibt"
+    spellname_ice_ball = "Ice Ball"
+    spelldesc_ice_ball = "A ball of ice, radius=3"
+
+    spellcode_fire_ball = "fbt"
+    spellname_fire_ball = "Fire Ball"
+    spelldesc_fire_ball = "A ball of fire, radius=3"
+
+    # Sleeps
+    spellcode_sleep_monster = "smb"
+    spellname_sleep_monster_bolt = "Sleep Monster"
+    spelldesc_sleep_monster_bolt = "Sleep Monster"
+
+    # Teleports
+    spellname_blink = 'Blink'
+    spelldesc_blink = 'Teleports the caster short distances'
+
+    spellname_teleport = 'Teleport'
+    spelldesc_teleport = 'Teleports the caster long distances'
     
     spelldesc_agility = "Improves the caster's hand-eye coordination for a brief time."
     spelldesc_magic_missile = "A small bolt of arcane energy leaps from the caster's finger and strikes the target.  The damage is light, but cannot be resisted."

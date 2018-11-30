@@ -2,14 +2,14 @@ from creature_families import *
 class scruffy_looking_hobbit(Humanoid):
     name = "scruffy_looking_hobbit"
     tile = "h"
-    level = 3
+    level = 1
     color = c_Blue
     can_open_doors = True
     hp_max = 9
     str, dex, int = 3, 16, 5
     move_speed = 110
     desc = """ An annoying little hobbit."""
-    attacks = [[pyro_items.Punch("1d3", 80), 1]]
+    attacks = [[pyro_items.Punch("1d3", 80), 1], [magic.Blink(), 1]]
 class dark_elf(Humanoid):
     name = "dark_elf"
     tile = "h"
