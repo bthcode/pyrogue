@@ -213,11 +213,6 @@ class IOWrapper(object):
                            self.game_start_y, self.game_start_x,
                            self.game_start_y + self.game_height-2,
                            self.game_start_x + self.game_width-2 )
-        logfile.write('REFRESH: {0}, {1}, {2}, {3}, {4}, {5}\n'.format(
-                            self.game_ul_y, self.game_ul_x,
-                           self.game_start_y, self.game_start_x,
-                           self.game_start_y + self.game_height-2,
-                           self.game_start_x + self.game_width-2 ))
         curses.doupdate()
         self.pad.touchwin()
 

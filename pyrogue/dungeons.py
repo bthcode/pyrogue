@@ -7,6 +7,7 @@ import creatures
 import dungeon_features
 import random
 from io_curses import *
+import logging
 
 
 class Dungeon(object):
@@ -93,7 +94,7 @@ class Level(object):
                         self.AddCreature(mob, i, j)
                         break
                 else:
-                    log("Mob bailout on level %s" % self.depth)
+                    logging.debug("Mob bailout on level %s" % self.depth)
 
     def AddCreature(self, mob, x, y):
         "Add a mob to the level at position x, y."
@@ -218,11 +219,11 @@ class Level(object):
                 for y in range(self.height):
                     painted += 1
                     self.PaintSquare(x, y)
-            log("Full dungeon repaint.")
+            logging.debug("Full dungeon repaint.")
         else:
             for x, y in self.dirty:
                 self.PaintSquare(x, y)
-            log("Painted %s dungeon squares." % len(self.dirty))
+            logging.debug("Painted %s dungeon squares." % len(self.dirty))
         self.dirty = {}
 
     def FeatureAt(self, x, y):
@@ -323,9 +324,9 @@ class Level(object):
         Global.IO.PutTile(x, y, tile, color)
 
     def LogAll(self):
-        log("Level LogAll:")
+        logging.debug("Level LogAll:")
         for key, creature in self.creatures.items():
-            log("creature at: {0}".format(key))
+            logging.debug("creature at: {0}".format(key))
             creature.Log()
 
     def RandomSquare(self):

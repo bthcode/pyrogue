@@ -19,8 +19,11 @@ import sys
 import argparse
 import pickle
 
+import logging
 
-####################### CLASS DEFINITIONS #######################
+import logging
+logging.basicConfig(filename='pyro.log',level=logging.DEBUG)
+
 
 class Pyro(object):
     """
@@ -46,7 +49,7 @@ class Pyro(object):
             while True:
                 self.game.Update()
         except GameOver:
-            log("Game ended normally.")
+            logging.info("Game ended normally.")
 
     def Save(self, savefile):
         '''

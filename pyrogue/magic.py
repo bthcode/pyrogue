@@ -2,6 +2,7 @@
 
 from util import *
 from io_curses import *
+import logging
 
 class Spell(object):
     def AfterCast(self, caster):
@@ -437,22 +438,22 @@ class SpeedBuff(Buff):
     def __init__(self, amount=1, desc="Speed"):
         self.amount, self.desc = amount, desc
     def Apply(self, target, silent=False):
-        log("Speed Buf Apply target={0}:{1}".format(target, target.move_speed))
+        logging.debug("Speed Buf Apply target={0}:{1}".format(target, target.move_speed))
         target.move_speed   = max(1, target.move_speed + self.amount)
         target.attack_speed = max(1, target.attack_speed + self.amount)
         target.cast_speed   = max(1, target.cast_speed + self.amount)
-        log("Speed Buf Apply target={0}:{1}".format(target, target.move_speed))
+        logging.debug("Speed Buf Apply target={0}:{1}".format(target, target.move_speed))
         if not silent:
             if target is Global.pc:
                 Global.IO.Message(lang.effect_speed_buff_you)
             elif target.pc_can_see:
                 Global.IO.Message(lang.effect_speed_buff_mob % lang.ArticleName("The", target))
     def Remove(self, target, silent=False):
-        log("Speed Buf Remove target={0}:{1}".format(target, target.move_speed))
+        logging.debug("Speed Buf Remove target={0}:{1}".format(target, target.move_speed))
         target.move_speed   -= self.amount
         target.attack_speed -= self.amount
         target.cast_speed   -= self.amount
-        log("Speed Buf Remove target={0}:{1}".format(target, target.move_speed))
+        logging.debug("Speed Buf Remove target={0}:{1}".format(target, target.move_speed))
         if not silent:
             if target is Global.pc:
                 Global.IO.Message(lang.effect_speed_buff_gone_you)

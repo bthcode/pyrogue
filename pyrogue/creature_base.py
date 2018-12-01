@@ -7,6 +7,7 @@ import dungeon_features
 import astar
 import magic
 import pprint
+import logging
 
 
 class Bite(pyro_items.MeleeAttackType):
@@ -346,8 +347,8 @@ class Creature(object):
             self.effects.append(new_effect)
 
     def Log(self):
-        log(self)
-        log(pprint.pformat(self.to_dict()))
+        logging.debug(self)
+        logging.debug(pprint.pformat(self.to_dict()))
 
     def TryAttack(self, target):
         # Mob has tried to move onto another mob; possibly attack.

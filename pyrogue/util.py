@@ -114,7 +114,7 @@ vi_offsets = {
     'b' : (-1, 1),
     'n' : ( 1, 1),
     '.' : ( 0, 0),
-} 
+}
 
 arrow_offsets = {
     curses.KEY_DOWN  : ( 0, 1),
@@ -122,25 +122,6 @@ arrow_offsets = {
     curses.KEY_LEFT  : (-1, 0),
     curses.KEY_UP    : ( 0, -1),
 }
-####################### CLASS DEFINITIONS #######################
-
-class Logger(object):
-    def __init__(self, filename):
-        try:
-            self.file = open(filename, "w")
-            self.AddEntry("Log initialized.")
-        except IOError:
-            # Couldn't open the log file:
-            self.file = None            
-    def __call__(self, entry):
-        self.AddEntry(entry)
-        #print(entry)
-    def __del__(self):
-        if self.file:
-            self.file.close()
-    def AddEntry(self, entry):
-        if self.file:
-            self.file.write("%s\n" % entry)
 
 class Cycler(object):
     def __init__(self, iterable):
@@ -156,8 +137,6 @@ class Cycler(object):
     def prev(self):
         self.index = (self.index - 1) % len(self.iterable)
         return self.iterable[self.index]
-    
-####################### GLOBAL FUNCTIONS ########################
 
 def d(p1, p2=None):
     "Roll dice"
@@ -216,7 +195,7 @@ def wrap(text, width):
     A word-wrap function that preserves existing line breaks
     and most spaces in the text. Expects that existing line
     breaks are posix newlines (\\n).
-    
+
     EDB: I didn't write this beast--I fear and respect it.
     """
 
@@ -273,7 +252,7 @@ def hit_chance(differential, level=1):
         return 0.5 + mod
     else:
         return 0.5 - mod
-    
+
 def successful_hit(differential, level=1):
     return rnd(0, 1) < hit_chance(differential, level)
 
@@ -321,13 +300,12 @@ def calc_distance(x1, y1, x2, y2):
     Arguments
         x1, y1: Position 1
         x2, y2: Position 2
-    
+
     Returns
         h (int): rounded integer hypotenuse
     '''
     h = math.sqrt((x1-x2)**2 + (y1-y2)**2)
     return int(round(h))
-    
 
 def linear_path(x1, y1, x2, y2, blocked):
     "Return a list of (x, y) tuples along a line from (x1, y1) to (x2, y2)."
@@ -392,20 +370,19 @@ def range_direction_path(x, y, target_range, direction, blocked):
     path, blocked = linear_path(x,y, x_end,y_end, blocked)
     return path, blocked
 
-        
 def animation_delay():
     if ANIMATION_DELAY:
         sleep(ANIMATION_DELAY)
-    
+
 def bonus_str(bonus):
     "Return -1, +0, +1, etc. from a given bonus."
     if bonus < 0:
         return "-%s" % bonus
     else:
         return "+%s" % bonus
-    
-def report_combat_hit(attacker, target, damage_taken, 
-                      verbs=["hits", "hits", "hits"], 
+
+def report_combat_hit(attacker, target, damage_taken,
+                      verbs=["hits", "hits", "hits"],
                       verbs_sp=["hit", "hit", "hit"]):
     "Display a text message about a successful attack."
     if not seen(attacker) and not seen(target): return
@@ -414,10 +391,10 @@ def report_combat_hit(attacker, target, damage_taken,
             Global.IO.Message(lang.combat_you_hit % (verbs_sp[1],
                 lang.ArticleName("the", target), damage_taken))
             if target.dead:
-                Global.IO.Message(lang.combat_you_killed % 
+                Global.IO.Message(lang.combat_you_killed %
                                   (lang.ArticleName("the", target),target.kill_xp))
         elif target.is_pc:
-            Global.IO.Message(lang.combat_mob_hit_you % 
+            Global.IO.Message(lang.combat_mob_hit_you %
                               (lang.ArticleName("The", attacker), verbs[1], damage_taken))
         else:
             Global.IO.Message(lang.combat_mob_hit_mob % (lang.ArticleName("The", attacker),
@@ -435,7 +412,7 @@ def report_combat_hit(attacker, target, damage_taken,
     if target.is_pc:
         Global.IO.ShowStatus()
     return True
-    
+
 def report_combat_miss(attacker, target,
                        verbs=["hits", "hits", "hits"],
                        verbs_sp=["hit", "hit", "hit"]):
@@ -450,8 +427,3 @@ def report_combat_miss(attacker, target,
         Global.IO.Message(lang.combat_mob_misses_mob % (lang.ArticleName("The", attacker),
               verbs_sp[1], lang.ArticleName("the", target)))
     return False
-    
-    
-####################### INITIALIZATION ##########################
-
-log = Logger("pyro.log")
