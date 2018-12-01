@@ -10,6 +10,7 @@ import magic
 import dungeon_features
 from io_curses import *
 
+
 class PlayerCharacter(creatures.Humanoid):
     "The player character."
     tile = "@"
@@ -28,6 +29,7 @@ class PlayerCharacter(creatures.Humanoid):
     friendly = True
     vision_radius = 80
     attacks = []
+
     def __init__(self):
         Global.pc = self
         # Do generic humanoid creature initialization:
@@ -38,19 +40,16 @@ class PlayerCharacter(creatures.Humanoid):
         # Initialize commands:
         self.InitCommands()
         # Let the player customize their character:
-        #Global.IO.ClearScreen()
         self.name = Global.IO.GetString(lang.prompt_player_name, noblank=True,
                                         pattr=c_yellow, iattr=c_Yellow)
-        #Global.IO.ClearScreen()
 
-        # TEST
         god = Global.IO.GetChoice([Krol, Dis], lang.prompt_player_god % self.name)
         rprompt = lang.prompt_player_race % self.name
         if god == Krol:
             self.archetype = Global.IO.GetChoice([KrolDwarf, KrolElf, KrolHuman], rprompt)(self)
         elif god == Dis:
             self.archetype = Global.IO.GetChoice([DisDwarf, DisElf, DisHuman], rprompt)(self)
-        #self.archetype = DisElf(self)
+
         self.archetype.hp, self.archetype.mp = self.stats("str"), max(0, self.stats("int") - 7)
         self.hp_max, self.mp_max = self.archetype.hp, self.archetype.mp
         self.gain_str, self.gain_dex, self.gain_int = 1, 1, 1   # number of gains needed to go up a notch
@@ -65,7 +64,6 @@ class PlayerCharacter(creatures.Humanoid):
         self.target = None
         self.current_level = None
 
-    
     @TraceCalls(logfile)
     def AdjacentPassableSquares(self):
         "Return a list of adjacent squares the player can move into."
@@ -78,11 +76,11 @@ class PlayerCharacter(creatures.Humanoid):
                 if F and F.potentially_passable:
                     adj.append((self.x+dx, self.y+dy))
         return adj
-    
+
     @TraceCalls(logfile)
     def AscendStairs(self):
         self.UseStairs("ascend")
-    
+
     @TraceCalls(logfile)
     def Attack(self, target):
         "Attack the given creature."
@@ -91,7 +89,7 @@ class PlayerCharacter(creatures.Humanoid):
         except IndexError:
             attack = self.unarmed
         success = attack.Attempt(self, target)
-    
+
     @TraceCalls(logfile)
     def AutoRest(self):
         if self.run_count > 100 or self.FullyRested():
@@ -106,7 +104,7 @@ class PlayerCharacter(creatures.Humanoid):
         self.Walk(0, 0)
         if self.run_count % 10 == 0:
             Global.IO.screen.refresh()
-    
+
     @TraceCalls(logfile)
     def AutoRun(self):
         self.run_count += 1
@@ -114,8 +112,7 @@ class PlayerCharacter(creatures.Humanoid):
         mx, my = None, None
         if self.run_count > 1:
             for dx, dy in offsets:
-                if ((dx == 0 or dy == 0) and (dx != dy )
-                and (self.x+dx != self.prev_x or self.y+dy != self.prev_y)):
+                if ((dx == 0 or dy == 0) and (dx != dy) and (self.x+dx != self.prev_x or self.y+dy != self.prev_y)):
                     F = self.current_level.FeatureAt(self.x+dx, self.y+dy)
                     if isinstance(F, dungeon_features.Door):
                         self.running = False
@@ -128,7 +125,7 @@ class PlayerCharacter(creatures.Humanoid):
                 mx, my = self.run_dx, self.run_dy
         else:
             adj = self.AdjacentPassableSquares()
-            adj = [s for s in adj if s not in self.ran and (s[0]==self.x or s[1]==self.y)]
+            adj = [s for s in adj if s not in self.ran and (s[0] == self.x or s[1] == self.y)]
             if len(adj) == 1:
                 # Only one square we can move to other than the one we were just in:
                 mx, my = adj[0][0]-self.x, adj[0][1]-self.y
@@ -146,13 +143,13 @@ class PlayerCharacter(creatures.Humanoid):
             self.Walk(mx, my)
             if True and self.run_count % 1 == 0:
                 Global.IO.screen.refresh()
-    
+
     @TraceCalls(logfile)
     def BeginAutoRest(self):
         self.resting = True
         self.run_count = 0
         Global.IO.Message(lang.msg_resting, nowait=True)
-    
+
     @TraceCalls(logfile)
     def BeginAutoRun(self):
         "Move in the given direction until something interesting happens."
@@ -165,7 +162,7 @@ class PlayerCharacter(creatures.Humanoid):
         else:
             self.running = True
         self.run_dx, self.run_dy, self.run_count = dx, dy, 0
-        self.ran = [(self.x+x, self.y+y) for (x, y) in offsets if x==0 or y==0]
+        self.ran = [(self.x+x, self.y+y) for (x, y) in offsets if x == 0 or y == 0]
         try:
             self.ran.remove((self.x+dx, self.y+dy))
         except ValueError:
@@ -174,62 +171,74 @@ class PlayerCharacter(creatures.Humanoid):
         for x, y, w, h in self.current_level.layout.rooms:
             if (x <= self.x+dx < x+w) and (y <= self.y+dy < y+h):
                 self.run_in_room = True
-    
+
     @TraceCalls(logfile)
     def CastSpell(self):
         spell = Global.IO.GetSpell()
         if spell:
-            #Global.IO.screen.refresh()
             spell.Cast(self)
-    
+
     @TraceCalls(logfile)
     def Cheat(self):
+
         class Cheat:
+
             def __init__(self, name, desc, fn):
                 self.name, self.desc, self.fn = name, desc, fn
+
         def cheat_hp():
             self.hp += 1000
             self.mp += 1000
+
         def cheat_omni():
             self.omniscient = not self.omniscient
+
         def cheat_level():
             Global.pc.GainXP(Global.pc.xp_for_next_level - Global.pc.xp)
+
         def cheat_immortal():
             self.immortal = not self.immortal
             if self.immortal:
                 Global.IO.Message("You are now immortal and cannot die.")
             else:
                 Global.IO.Message("You are once again subject to death.")
+
         def cheat_pyro_item():
             item = Global.IO.GetMonsterChoice("Item:")
             Global.IO.Message("You asked for a {0}".format(item))
-            item_list = [ x.__name__ for x in creatures.all_creatures ]
+            item_list = [x.__name__ for x in creatures.all_creatures]
             try:
-                x,y = self.current_level.GetCoordsNear(self.x, self.y)
-                Global.IO.Message("Creating a {0} at {1}, {2}".format(item, x, y)) 
+                x, y = self.current_level.GetCoordsNear(self.x, self.y)
+                Global.IO.Message("Creating a {0} at {1}, {2}".format(item, x, y))
                 m = getattr(pyro_items, item)()
                 self.current_level.AddItem(m, x, y)
-            except:
+            except Exception as err:
                 Global.IO.Message("Error creating item")
+
         def cheat_pyro_items():
             for i in range(20):
                 while True:
                     dx, dy = irand(-3, 3), irand(-3, 3)
-                    if dx*dx + dy*dy < 16: break
+                    if dx*dx + dy*dy < 16:
+                        break
                 if self.current_level.IsEmpty(self.x+dx, self.y+dy):
                     lvl = int_range(15, 5, 2)
                     self.current_level.AddItem(pyro_items.random_item(lvl), self.x+dx, self.y+dy)
+
         def cheat_genocide():
             for c in self.current_level.creatures.values():
                 if c is not Global.pc:
                     c.Die()
+
         def cheat_stat():
             self.GainStatPermanent("any")
+
         def cheat_teleport():
             self.current_level.Display(self)
             x, y = Global.IO.GetLocation("Teleport where?")
             if x is not None:
                 self.current_level.MoveCreature(self, x, y)
+
         def cheat_smite():
             self.current_level.Display(self)
             x, y = Global.IO.GetLocation("Smite whom?")
@@ -239,64 +248,64 @@ class PlayerCharacter(creatures.Humanoid):
                     c.Die()
                 else:
                     Global.IO.Message("There's nothing there to smite!")
+
         def cheat_free_motion():
             self.free_motion = not self.free_motion
             if self.free_motion:
                 Global.IO.Message("You can now walk through walls and ascend/descend without stairs.")
             else:
                 Global.IO.Message("You are no longer able to walk through solid objects.")
+
         def cheat_clearout():
             for s in self.current_level.fov.Ball(self.x, self.y, 4, ignore_walls=True):
                 self.current_level.layout.data[s[1]][s[0]] = "."
                 self.current_level.Dirty(*s)
+
         def cheat_summon_monster():
             monster = Global.IO.GetMonsterChoice("Monster:")
             Global.IO.Message("You asked for a {0}".format(monster))
-            monster_list = [ x.__name__ for x in creatures.all_creatures ]
+            monster_list = [x.__name__ for x in creatures.all_creatures]
             if monster not in monster_list:
                 pass
             else:
-                x,y = self.current_level.GetCoordsNear(self.x, self.y)
-                Global.IO.Message("Creating a {0} at {1}, {2}".format(monster, x, y)) 
-                #m = creatures.Rat() #globals()['creatures.{0}'.format(monster)](self.current_level.depth)
+                x, y = self.current_level.GetCoordsNear(self.x, self.y)
+                Global.IO.Message("Creating a {0} at {1}, {2}".format(monster, x, y))
                 m = getattr(creatures, monster)()
                 self.current_level.AddCreature(m, x, y)
+
         def cheat_test():
             magic.MagicMissile().Cast(self)
-        cheats = [
-            Cheat("Gain 1000 hit points", "", cheat_hp), 
-            Cheat("Toggle omniscience", "", cheat_omni), 
-            Cheat("Gain a level", "", cheat_level),
-            Cheat("Toggle immortality", "", cheat_immortal), 
-            Cheat("Items from heaven", "", cheat_pyro_items),
-            Cheat("Kill all mobs in level", "", cheat_genocide),
-            Cheat("Stat gain", "", cheat_stat),
-            Cheat("Teleport", "", cheat_teleport),
-            Cheat("Smite a creature", "", cheat_smite),
-            Cheat("Toggle free motion", "", cheat_free_motion),
-            Cheat("Clear nearby walls", "", cheat_clearout),
-            Cheat("Target test", "", cheat_test),
-            Cheat("Summon monster", "", cheat_summon_monster),
-            Cheat("Get Item", "", cheat_pyro_item),
-        ]
+        cheats = [Cheat("Gain 1000 hit points", "", cheat_hp),
+                  Cheat("Toggle omniscience", "", cheat_omni),
+                  Cheat("Gain a level", "", cheat_level),
+                  Cheat("Toggle immortality", "", cheat_immortal),
+                  Cheat("Items from heaven", "", cheat_pyro_items),
+                  Cheat("Kill all mobs in level", "", cheat_genocide),
+                  Cheat("Stat gain", "", cheat_stat),
+                  Cheat("Teleport", "", cheat_teleport),
+                  Cheat("Smite a creature", "", cheat_smite),
+                  Cheat("Toggle free motion", "", cheat_free_motion),
+                  Cheat("Clear nearby walls", "", cheat_clearout),
+                  Cheat("Target test", "", cheat_test),
+                  Cheat("Summon monster", "", cheat_summon_monster),
+                  Cheat("Get Item", "", cheat_pyro_item)]
         cheat = Global.IO.GetChoice(cheats, "Cheat how?", nocancel=False)
         if cheat is not None:
             cheat.fn()
-        
-    
+
     @TraceCalls(logfile)
     def CommandList(self):
         Global.IO.CommandList(self)
-    
+
     @TraceCalls(logfile)
     def DescendStairs(self):
         self.UseStairs("descend")
-    
+
     @TraceCalls(logfile)
     def DetailedStats(self):
         "Show a detailed player stats screen."
         Global.IO.DetailedStats(self)
-    
+
     @TraceCalls(logfile)
     def Die(self):
         if self.immortal:
@@ -308,7 +317,7 @@ class PlayerCharacter(creatures.Humanoid):
         # PC has died; game is over:
         Global.IO.Message(lang.msg_you_die, forcewait=True)
         raise GameOver
-    
+
     @TraceCalls(logfile)
     def DropItem(self):
         "Drop an item on the floor."
@@ -323,7 +332,7 @@ class PlayerCharacter(creatures.Humanoid):
             success, msg = self.inventory.Drop(item, dropqty)
             Global.IO.Message(msg)
             return success
-    
+
     @TraceCalls(logfile)
     def EndGame(self):
         if Global.IO.YesNo(lang.prompt_save):
@@ -331,20 +340,21 @@ class PlayerCharacter(creatures.Humanoid):
             raise GameOver
         elif Global.IO.YesNo(lang.prompt_quit):
             raise GameOver
-    
+
     @TraceCalls(logfile)
     def EquippedInventory(self):
         Global.IO.DisplayInventory(self, equipped=True)
         Global.IO.GetKey()
         Global.IO.ClearScreen()
-    
+
     @TraceCalls(logfile)
     def ExamineItem(self):
         "Show a detailed description of an item."
         item = Global.IO.GetItemFromInventory(self, lang.prompt_examine)
-        if item is None: return False   # Cancelled
+        if item is None:
+            return False   # Cancelled
         Global.IO.DisplayText(item.LongDescription(), c_yellow)
-    
+
     @TraceCalls(logfile)
     def Fire(self):
         "Fire a missile weapon."
@@ -371,19 +381,19 @@ class PlayerCharacter(creatures.Humanoid):
                 else:
                     # Multiple valid choices; ask the player for one and equip it:
                     ammo = Global.IO.GetChoice(ammos, lang.prompt_which_ammo, nohelp=True)
-                    if ammo is None: return  # Player cancelled ammo choice; cancel fire.
+                    if ammo is None:
+                        return  # Player cancelled ammo choice; cancel fire.
                     self.Equip(ammo)
-
 
         # -------- targetting -------- #
         cmd = Global.IO.GetDirectionOrTarget(self, target_range=bow.range)
 
-        if cmd.type == 'x': # cancel
+        if cmd.type == 'x':  # cancel
             return
-        elif cmd.type == 't': # target
+        elif cmd.type == 't':  # target
             tx = cmd.target.x
             ty = cmd.target.y
-        elif cmd.type == 'd': # direction
+        elif cmd.type == 'd':  # direction
             direction = cmd.direction
         else:
             return
@@ -418,14 +428,13 @@ class PlayerCharacter(creatures.Humanoid):
                 report_combat_hit(self, target, damage_taken, bow.verbs, bow.verbs_sp)
             else:
                 report_combat_miss(self, target, bow.verbs, bow.verbs_sp)
-    
+
     @TraceCalls(logfile)
     def FullyRested(self):
         return (True
-            and self.hp >= self.hp_max
-            and self.mp >= self.mp_max
-        )
-    
+                and self.hp >= self.hp_max
+                and self.mp >= self.mp_max)
+
     @TraceCalls(logfile)
     def GainLevel(self):
         if self.level > 0:
@@ -434,7 +443,7 @@ class PlayerCharacter(creatures.Humanoid):
         self.xp_for_next_level = self.XPNeeded(self.level + 1)
         if self.level > 1:
             Global.IO.ShowStatus()
-    
+
     @TraceCalls(logfile)
     def GainStatPermanent(self, stat):
         if stat == "any":
@@ -443,7 +452,7 @@ class PlayerCharacter(creatures.Humanoid):
                 k = Global.IO.Ask("Improve %s:%s, %s:%s, or %s:%s?" %
                                   (lang.stat_key_str.upper(), lang.stat_name_str,
                                    lang.stat_key_dex.upper(), lang.stat_name_dex,
-                                   lang.stat_key_int.upper(), lang.stat_name_int), 
+                                   lang.stat_key_int.upper(), lang.stat_name_int),
                                   opts+opts.upper(), c_yellow)
                 if k.lower() == lang.stat_key_str:
                     self.GainStatPermanent('str')
@@ -484,11 +493,11 @@ class PlayerCharacter(creatures.Humanoid):
         else:
             raise ValueError(stat)
         Global.IO.Message(lang.msg_you_feel_improved % adj)
-    
+
     @TraceCalls(logfile)
     def GainXP(self, amount):
         self.xp += amount
-    
+
     @TraceCalls(logfile)
     def GetTarget(self, target_range=None):
         "Ask the player for a target."
@@ -501,14 +510,13 @@ class PlayerCharacter(creatures.Humanoid):
             self.target = t
             return self.target, linear_path(self.x, self.y, self.target.x, self.target.y,
                                             self.current_level.BlocksPassage)
-        
         return t, p
-    
+
     @TraceCalls(logfile)
     def InitCommands(self):
         self.commands = []
         self.commands.append(Command(lang.cmdname_inventory, 'i', self.Inventory))
-        self.commands.append(Command(lang.cmdname_equipment, 'e', self.EquippedInventory))        
+        self.commands.append(Command(lang.cmdname_equipment, 'e', self.EquippedInventory))
         self.commands.append(Command(lang.cmdname_pickup, ',g', self.Pickup))
         self.commands.append(Command(lang.cmdname_drop, 'd', self.DropItem))
         self.commands.append(Command(lang.cmdname_wear, 'w', self.Wear))
@@ -532,17 +540,17 @@ class PlayerCharacter(creatures.Humanoid):
         self.commands.append(Command(lang.cmdname_quit, 'Q', self.EndGame))
         self.commands.append(Command(lang.cmdname_cheat, 'C', self.Cheat))
         self.commands.append(Command(lang.cmdname_save, 's', self.SaveGame))
-    
+
     @TraceCalls(logfile)
     def Inventory(self):
         Global.IO.DisplayInventory(self)
         Global.IO.GetKey()
         Global.IO.ClearScreen()
-    
+
     @TraceCalls(logfile)
     def MessageLog(self):
         Global.IO.MessageLog()
-    
+
     @TraceCalls(logfile)
     def OpenCloseDoor(self):
         "Open or close an adjacent door."
@@ -564,7 +572,7 @@ class PlayerCharacter(creatures.Humanoid):
         else:
             # Multiple doors nearby; ask the player which to close:
             k, dx, dy = Global.IO.GetDirection()
-            if k == None:
+            if k is None:
                 # cancelled
                 return
             else:
@@ -576,7 +584,7 @@ class PlayerCharacter(creatures.Humanoid):
                         door.Close(self)
                 else:
                     Global.IO.Message(lang.error_nothing_there_to_openclose)
-    
+
     @TraceCalls(logfile)
     def Pickup(self):
         "Pick up pyro_items(s) at the current position."
@@ -606,10 +614,9 @@ class PlayerCharacter(creatures.Humanoid):
                     if qty is None or qty == 0:
                         continue
                     success, msg = self.inventory.Pickup(i, qty)
-                    #Global.IO.Message(msg)
                     any_success = any_success or success
             return any_success
-    
+
     @TraceCalls(logfile)
     def Quaff(self):
         "Choose a potion and quaff it."
@@ -619,7 +626,7 @@ class PlayerCharacter(creatures.Humanoid):
                 potion.Quaff(self)
             except AttributeError:
                 Global.IO.Message(lang.error_cannot_drink_item % potion.name)
-    
+
     @TraceCalls(logfile)
     def Read(self):
         "Choose a scroll and read it."
@@ -629,32 +636,30 @@ class PlayerCharacter(creatures.Humanoid):
                 scroll.Read(self)
             except AttributeError:
                 Global.IO.Message(lang.error_cannot_read_item % scroll.name)
-    
+
     @TraceCalls(logfile)
     def TabTarget(self):
         Global.IO.TabTarget()
         self.tab_targeting = True
-    
+
     @TraceCalls(logfile)
     def TakeDamage(self, amount, type=None, source=None):
         self.hp -= amount
         return amount
-    
+
     @TraceCalls(logfile)
     def Throw(self):
         pass
-    
+
     @TraceCalls(logfile)
     def UnTarget(self):
         self.target = None
-    
+
     @TraceCalls(logfile)
     def SaveGame(self):
         Global.IO.Message(lang.saving_game.format(self.name + '.pkl'))
-        # How do I make a call to pyro from here?  
         Global.pyro.Save(self.name + '.pkl')
 
-    
     @TraceCalls(logfile)
     def Update(self):
         "Called each turn; get the player's action and execute it."
@@ -732,7 +737,7 @@ class PlayerCharacter(creatures.Humanoid):
                 pass
             if not self.tab_targeting:
                 Global.IO.tab_targeting = False
-    
+
     @TraceCalls(logfile)
     def UseStairs(self, action):
         if self.free_motion:
@@ -741,7 +746,7 @@ class PlayerCharacter(creatures.Humanoid):
                 name = "staircase up"
             elif action == "descend":
                 name = "staircase down"
-            stairs = [f for f in self.current_level.features.values() 
+            stairs = [f for f in self.current_level.features.values()
                       if f.name == name][0]
         else:
             stairs = self.current_level.FeatureAt(self.x, self.y)
@@ -755,7 +760,7 @@ class PlayerCharacter(creatures.Humanoid):
         else:
             raise ValueError
         Global.IO.Message(msg)
-    
+
     @TraceCalls(logfile)
     def Walk(self, dx, dy):
         "Try to move the specified amounts."
@@ -786,13 +791,14 @@ class PlayerCharacter(creatures.Humanoid):
             return True
         else:
             return False
-    
+
     @TraceCalls(logfile)
     def Wear(self):
         "Let the player choose an item to equip."
         item = Global.IO.GetItemFromInventory(self, lang.prompt_wear, types='[="({|',
                                               equipped=False, notoggle=True)
-        if item is None: return False   # Cancelled
+        if item is None:
+            return False   # Cancelled
         # Verify that the item can be equipped:
         try:
             item.equip_slot
@@ -800,7 +806,8 @@ class PlayerCharacter(creatures.Humanoid):
             Global.IO.Message(lang.error_cannot_equip_item)
             return False
         # If it's already equipped, remove it:
-        if self.Unequip(item): return False
+        if self.Unequip(item):
+            return False
         # Item isn't equipped; see if there's an open slot:
         if item.equip_slot not in self.unequipped:
             # No slot available; free it up:
@@ -813,32 +820,19 @@ class PlayerCharacter(creatures.Humanoid):
             else:
                 # More than one item in that slot; ask which to remove:
                 r = Global.IO.GetChoice(worn, lang.prompt_remove_which, nohelp=True)
-                if r is None: return False
+                if r is None:
+                    return False
                 self.Unequip(r)
         self.Equip(item)
-    
+
     @TraceCalls(logfile)
     def Unwear(self):
         "Let the player choose an item to unequip."
         item = Global.IO.GetItemFromInventory(self, lang.prompt_unwear, equipped=True, notoggle=True)
-        if item is None: return False  # Cancelled
+        if item is None:
+            return False  # Cancelled
         self.Unequip(item)
-    #def Wield(self, item=None, silent=False):
-        #"Let the player choose an item to wield as a weapon."
-        #if item is None:
-            #item = Global.IO.GetItemFromInventory(self, lang.prompt_wield)
-        #if item is None: return False  # Cancelled
-        #if self.wielded == item:
-            ## Select wielded item to unwield it:
-            #item = None     
-        #creatures.Creature.Wield(self, item)
-        #if not silent:
-            #if item:
-                #Global.IO.Message(lang.msg_you_wield % lang.ArticleName("a", self.wielded))
-            #else:
-                #Global.IO.Message(lang.msg_you_wield % "nothing")
-        #return True
-    
+
     @TraceCalls(logfile)
     def XPNeeded(self, level):
         "Return the xp needed to attain the given level."
@@ -846,11 +840,14 @@ class PlayerCharacter(creatures.Humanoid):
             return int(10 * self.xp_rate * 1.5 ** (level-1) + self.XPNeeded(level - 1))
         elif level == 1:
             return 0
-        else: raise ValueError
+        else:
+            raise ValueError
+
 
 class Command(object):
     "Any command the player can give has an instance of this class."
     long_desc = ""
+
     def __init__(self, desc, keys, function):
         if isinstance(keys, str):
             self.keys = [ord(c) for c in keys]
@@ -859,34 +856,41 @@ class Command(object):
         else:
             self.keys = keys
         self.desc, self.function = desc, function
-    
+
 
 class PlayerInventory(creatures.Inventory):
+
     def CanHold(self, item):
         return item.Weight() * self.mob.bag.reduction + self.TotalWeight() <= self.Capacity()
+
     def TotalWeight(self):
         eq = sum([i.Weight() for i in self.mob.equipped])
         pack = sum([i[0].Weight() for i in self.items
                     if i[0] not in self.mob.equipped]) * self.mob.bag.reduction
         return eq + pack
-        
-################################ GODS AND RACES #########################################
+
 
 class Diety(object):
     pass
+
+
 class Krol(Diety):
     name = "Krol"
     desc = lang.goddesc_krol
+
+
 class Dis(Diety):
     name = "Dis"
     desc = lang.goddesc_dis
-        
+
+
 class Archetype(object):
     def __init__(self, pc):
         self.pc = pc
         self.gain_str, self.gain_dex, self.gain_int, self.gain_any = 0, 0, 0, 0
         # Starting pyro_items common to all archetypes:
         pc.inventory.Pickup(pyro_items.MinorHealPotion())
+
     def GainLevel(self):
         pc = self.pc
         pc.level += 1
@@ -902,10 +906,13 @@ class Archetype(object):
             stat, self.stat_gains = self.stat_gains[0], self.stat_gains[1:]
             pc.GainStatPermanent(stat)
             self.stat_gains.append(stat)
+
+
 class KrolDwarf(Archetype):
     name = lang.archname_kroldwarf
     cname = lang.archname_kroldwarf_short
     desc = lang.archdesc_kroldwarf
+
     def __init__(self, pc):
         armor = pyro_items.random_armor(-2, pyro_items.ChainShirt, nospecial=True)
         pc.inventory.Pickup(armor)
@@ -916,10 +923,13 @@ class KrolDwarf(Archetype):
         Archetype.__init__(self, pc)
         pc.stats = creatures.Stats(11, 8, 5)
         self.stat_gains = ['str', 'dex', 'any', 'str']
+
+
 class DisDwarf(Archetype):
     name = lang.archname_disdwarf
     cname = lang.archname_disdwarf_short
     desc = lang.archdesc_disdwarf
+
     def __init__(self, pc):
         armor = pyro_items.random_armor(-2, pyro_items.Jerkin, nospecial=True)
         pc.inventory.Pickup(armor)
@@ -930,10 +940,13 @@ class DisDwarf(Archetype):
         Archetype.__init__(self, pc)
         pc.stats = creatures.Stats(8, 8, 8)
         self.stat_gains = ['dex', 'any', 'str', 'any', 'int', 'any']
+
+
 class KrolElf(Archetype):
     name = lang.archname_krolelf
     cname = lang.archname_krolelf_short
     desc = lang.archdesc_krolelf
+
     def __init__(self, pc):
         armor = pyro_items.random_armor(-2, pyro_items.Robe, nospecial=True)
         pc.inventory.Pickup(armor)
@@ -945,10 +958,13 @@ class KrolElf(Archetype):
         pc.stats = creatures.Stats(5, 7, 12)
         self.stat_gains = ['int', 'any', 'int']
         pc.spells.append(magic.MagicMissile())
+
+
 class DisElf(Archetype):
     name = lang.archname_diself
     cname = lang.archname_diself_short
     desc = lang.archdesc_diself
+
     def __init__(self, pc):
         armor = pyro_items.random_armor(-2, pyro_items.Jerkin, nospecial=True)
         pc.inventory.Pickup(armor)
@@ -969,10 +985,13 @@ class DisElf(Archetype):
         pc.spells.append(magic.Blink())
         pc.spells.append(magic.Teleport())
         pc.spells.append(magic.SlowOther())
+
+
 class KrolHuman(Archetype):
     name = lang.archname_krolhuman
     cname = lang.archname_krolhuman_short
     desc = lang.archdesc_krolhuman
+
     def __init__(self, pc):
         armor = pyro_items.random_armor(-2, pyro_items.Jerkin, nospecial=True)
         pc.inventory.Pickup(armor)
@@ -988,10 +1007,13 @@ class KrolHuman(Archetype):
         Archetype.__init__(self, pc)
         pc.stats = creatures.Stats(10, 10, 4)
         self.stat_gains = ['str', 'dex', 'any', 'str', 'dex']
+
+
 class DisHuman(Archetype):
     name = lang.archname_dishuman
     cname = lang.archname_dishuman_short
     desc = lang.archdesc_dishuman
+
     def __init__(self, pc):
         armor = pyro_items.random_armor(-2, pyro_items.Jerkin, nospecial=True)
         pc.inventory.Pickup(armor)
