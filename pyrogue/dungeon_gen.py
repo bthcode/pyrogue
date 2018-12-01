@@ -2,6 +2,7 @@
 
 from util import *
 
+
 # Find temp tiles that won't interfere with the defined ones:
 def temp_tiles(num):
     tiles = ""
@@ -10,16 +11,20 @@ def temp_tiles(num):
             tiles += L
             if len(tiles) >= num:
                 return tiles[:num]
+
+
 (TEMP_ROOM, TEMP_CORRIDOR, CORRIDOR_FLOOR) = temp_tiles(3)
 
 STEP = False
 
+
 class Level(object):
-    def __init__(self, level_width = 149, level_height = 29,
-                 room_min_width = 5, room_max_width = 11,
-                 room_min_height = 3, room_max_height = 6, 
-                 room_separation = 1, max_passages = 3,
-                 max_rooms = 25, room_tries = 50, passage_tries = 20):
+
+    def __init__(self, level_width=149, level_height=29,
+                 room_min_width=5, room_max_width=11,
+                 room_min_height=3, room_max_height=6,
+                 room_separation=1, max_passages=3,
+                 max_rooms=25, room_tries=50, passage_tries=20):
         self.level_width, self.level_height = level_width, level_height
         self.room_min_width, self.room_max_width = room_min_width, room_max_width
         self.room_min_height, self.room_max_height = room_min_height, room_max_height
@@ -31,8 +36,10 @@ class Level(object):
             self.data.append([WALL]*self.level_width)
         self.rooms = []
         self.generate()
+
     def __str__(self):
         return "\n".join(["".join(row) for row in self.data])
+
     def add_doors(self):
         "Add doors where passages meet rooms"
         for i in range(self.level_width):
@@ -43,8 +50,8 @@ class Level(object):
             for j in range(self.level_height):
                 if self.data[j][i] == DOOR and not self.adjacent_to(i, j, CORRIDOR_FLOOR):
                     self.data[j][i] = WALL
-        
-    def add_passage(self, rx, ry, rw, rh, dirs=[0,1,2,3]):
+
+    def add_passage(self, rx, ry, rw, rh, dirs=[0, 1, 2, 3]):
         "Add a passage from (x, y) till we hit a room or other passage"
         dx = (0, 1, 0, -1)
         dy = (-1, 0, 1, 0)
@@ -88,29 +95,28 @@ class Level(object):
                     ticker = 0
                     nx, ny, ndir = x, y, (dir+1) % 4
                     near = 999
-                    while 0<nx<self.level_width-2 and 0<ny<self.level_height-2 and self.data[ny][nx] != FLOOR:
+                    while 0 < nx < self.level_width-2 and 0 < ny < self.level_height-2 and self.data[ny][nx] != FLOOR:
                         nx += dx[ndir]
                         ny += dy[ndir]
-                    if 0<nx<self.level_width-2 and 0<ny<self.level_height-2 and self.data[ny][nx] == FLOOR:
+                    if 0 < nx < self.level_width-2 and 0 < ny < self.level_height-2 and self.data[ny][nx] == FLOOR:
                         near = abs(nx-x)+abs(ny-y)
                     nx, ny, ndir = x, y, (dir-1) % 4
-                    while 0<nx<self.level_width-2 and 0<ny<self.level_height-2 and self.data[ny][nx] != FLOOR:
+                    while 0 < nx < self.level_width-2 and 0 < ny < self.level_height-2 and self.data[ny][nx] != FLOOR:
                         nx += dx[ndir]
                         ny += dy[ndir]
-                    if 0<nx<self.level_width-2 and 0<ny<self.level_height-2 and self.data[ny][nx] == FLOOR and abs(nx-x)+abs(ny-y) < near:
+                    if 0 < nx < self.level_width-2 and 0 < ny < self.level_height-2 and self.data[ny][nx] == FLOOR and abs(nx-x)+abs(ny-y) < near:
                         dir = (dir-1) % 4
                     elif near < 999:
                         dir = (dir+1) % 4
                     else:
                         pass
-                elif x<1 or x>self.level_width-2 or y<1 or y>self.level_height-2:
+                elif x < 1 or x > self.level_width-2 or y < 1 or y > self.level_height-2:
                     # Back up one space, then turn right or left:
                     if length < 2:
                         break
                     x -= dx[dir]
                     y -= dy[dir]
                     dir = (dir + choice((-1, 1))) % 4
-                    #break
                 elif irand(0, 99) < twistiness and length > 0:
                     # Possibly turn based on twistiness of the corridor:
                     dir = (dir + choice((-1, 1))) % 4
@@ -133,8 +139,7 @@ class Level(object):
                 dl = (dir+1) % 4
                 dr = (dir-1) % 4
                 # disallow "sideswipe" connections of corridors to rooms:
-                if (self.data[y+dy[dr]][x+dx[dr]] == FLOOR
-                or self.data[y+dy[dl]][x+dx[dl]] == FLOOR):
+                if (self.data[y+dy[dr]][x+dx[dr]] == FLOOR or self.data[y+dy[dl]][x+dx[dl]] == FLOOR):
                     done = False
         if self.adjacent_or_diag(x, y, TEMP_ROOM):
             done = False
@@ -144,6 +149,7 @@ class Level(object):
         else:
             self.bake(TEMP_CORRIDOR, WALL)
             return False
+
     def add_room(self):
         for t in range(self.room_tries):
             # Try at most X times to add a room, then give up:
@@ -155,12 +161,12 @@ class Level(object):
             y = irand(1, self.level_height - h - 1)
             free = self.area_free(x, y, w, h)
             if STEP:
-                print ("Free is: %s" % free)
+                print("Free is: %s" % free)
             if free:
                 # The area is free; dig out the room:
                 for i in range(w):
                     for j in range(h):
-                        self.data[y+j][x+i] = TEMP_ROOM                                
+                        self.data[y+j][x+i] = TEMP_ROOM
                 passages_added = False
                 if len(self.rooms) > 0 and free != "room":
                     if len(self.rooms) > 1:
@@ -193,6 +199,7 @@ class Level(object):
                 self.rooms.append((x, y, w, h))
                 return True
         return False
+
     def adjacent_or_diag(self, x, y, what):
         "Return how many tiles of given type(s) are 8-way adjacent to (x, y)"
         num = 0
@@ -203,6 +210,7 @@ class Level(object):
             if self.data[j][i] in what:
                     num += 1
         return num
+
     def adjacent_to(self, x, y, what):
         "Return how many tiles of given type(s) are 4-way adjacent to (x, y)"
         num = 0
@@ -212,9 +220,10 @@ class Level(object):
             if self.data[j][i] in what:
                     num += 1
         return num
+
     def area_free(self, x, y, w, h):
         "return whether the area is free for a room"
-        passage = False # whether the area overlies a passage
+        passage = False  # whether the area overlies a passage
         room = False    # whether the area overlies a room
         for i in range(x-self.room_separation, x+w+1+self.room_separation):
             for j in range(y-self.room_separation, y+h+1+self.room_separation):
@@ -249,12 +258,14 @@ class Level(object):
                     if self.adjacent_to(x+w-1, j, FLOOR):
                         return "room"
             return "clear"
+
     def bake(self, old, new):
         "'bake' the fresh rooms/passages into the level"
         for i in range(self.level_width):
             for j in range(self.level_height):
                 if self.data[j][i] == old:
                     self.data[j][i] = new
+
     def cosmetic(self):
         # Make it look like a gameplay screen by hiding walls:
         self.bake(CORRIDOR_FLOOR, FLOOR)
@@ -266,10 +277,11 @@ class Level(object):
                         self.data[j][i] = WALL
 
     def display(self):
-        print ("-" * 78) 
+        print("-" * 78)
         for line in self.data:
-            print (''.join(line))
-        print ("-" * 78)
+            print(''.join(line))
+        print("-" * 78)
+
     def generate(self):
         "Add rooms, passages, doors, etc"
         while self.add_room():
@@ -277,8 +289,8 @@ class Level(object):
         self.add_doors()
         self.bake(CORRIDOR_FLOOR, FLOOR)
 
+
 if __name__ == "__main__":
     # Generate and display one dungeon (test code):
     L = Level(room_separation=1)
-    #L.cosmetic()
     L.display()
