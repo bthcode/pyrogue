@@ -164,10 +164,10 @@ class IOWrapper(object):
         self.stats_width   = 1
         self.height        = None
         self.width         = None
-        self.game_height   = None 
-        self.game_width    = None 
-        self.game_start_y  = None 
-        self.game_start_x  = None 
+        self.game_height   = None
+        self.game_width    = None
+        self.game_start_y  = None
+        self.game_start_x  = None
         # TODO: reset these on new level
         self.game_ul_x     = -1
         self.game_ul_y     = -1
@@ -177,17 +177,9 @@ class IOWrapper(object):
         self.msg_win = curses.newwin(self.msg_height, self.width, 0, 0)
         self.msg_win.refresh()
 
-        #self.stats_win = curses.newwin(self.game_height, self.stats_width, self.msg_height, 0)
-        #self.stats_win.box()
-        #self.stats_win.addstr(1,1,'stats')
-        #self.stats_win.refresh()
-
         self.game_win = curses.newwin(self.game_height, self.game_width, self.msg_height, self.stats_width)
-        #self.game_win.addstr(1,1,'game')
-        #self.game_win.refresh()
 
         self.status_win = curses.newwin(self.status_height, self.width, self.msg_height+self.game_height, 0)
-        #self.status_win.addstr(1,1,'status')
         self.status_win.refresh()
 
         self.clear()
@@ -196,9 +188,9 @@ class IOWrapper(object):
     def calc_layout(self):
         self.height, self.width = self.stdscr.getmaxyx()
         self.game_height   = self.height - self.msg_height - self.status_height
-        self.game_width    = self.width - self.stats_width 
-        self.game_start_y  = self.msg_height 
-        self.game_start_x  = self.stats_width 
+        self.game_width    = self.width - self.stats_width
+        self.game_start_y  = self.msg_height
+        self.game_start_x  = self.stats_width
 
         self.pad_height = 80
         self.pad_width  = 180
@@ -245,13 +237,13 @@ class IOWrapper(object):
 
         adj_x = max(x - self.game_width  // 2, 0)
         adj_y = max(y - self.game_height // 2, 0)
-        
+
         if self.game_ul_x == -1 or self.game_ul_y == -1:
             # initial center
             y, x = adj_y, adj_x
             self.game_ul_x = x; self.game_ul_y = y
         else:
-            if x - self.game_ul_x < 5: 
+            if x - self.game_ul_x < 5:
                 self.game_ul_x = max(self.game_ul_x - x_step, 0)
             elif (self.game_ul_x+self.game_width) - x < 5:
                 #try to move right
@@ -262,23 +254,22 @@ class IOWrapper(object):
             elif (self.game_ul_y+self.game_height) - y < 5:
                 # try to move down
                 self.game_ul_y = min(self.game_ul_y + y_step, self.pad_height-self.game_height)
-            
-        
+
         self.pad.refresh(  self.game_ul_y, self.game_ul_x,
                            self.game_start_y, self.game_start_x,
-                           self.game_start_y + self.game_height-2, 
+                           self.game_start_y + self.game_height-2,
                            self.game_start_x + self.game_width-2 )
         logfile.write('REFRESH: {0}, {1}, {2}, {3}, {4}, {5}\n'.format(
                             self.game_ul_y, self.game_ul_x,
                            self.game_start_y, self.game_start_x,
-                           self.game_start_y + self.game_height-2, 
+                           self.game_start_y + self.game_height-2,
                            self.game_start_x + self.game_width-2 ))
         curses.doupdate()
         self.pad.touchwin()
 
     def PutChar(self, y, x, ch, attr):
         if True or self.chars[y][x] != ch or self.attrs[y][x] != attr:
-            self.pad.addstr(y, x, ch, curses.color_pair(attr))                
+            self.pad.addstr(y, x, ch, curses.color_pair(attr))
 
     @TraceCalls(logfile)
     def refresh(self):
@@ -561,16 +552,6 @@ class IOWrapper(object):
         self.refresh()
         return choice
 
-#    @TraceCalls(logfile)
-#    def DrawGame(self):
-#        self.msg_win.touchwin()
-#        self.msg_win.refresh()
-#        self.status_win.touchwin()
-#        self.status_win.refresh()
-#        self.move(0,0)
-#        self.pad.touchwin()
-#        self.stdscr.refresh()
-
     @TraceCalls(logfile)
     def GetDirection(self):
         "Ask the player for a direction."
@@ -780,7 +761,6 @@ class IOWrapper(object):
             return None
         prompt = lang.prompt_choose_spell
         plen = clen(prompt)
-        #self.addstr_color(0, 0, prompt)
         self.addstr_color(0, 0, prompt, self.stdscr)
         shortcut, spell = "", None
         while len(shortcut) < 3:
@@ -789,7 +769,6 @@ class IOWrapper(object):
                 shortcut += k
                 self.addstr(0, plen + 1, shortcut.ljust(5), self.stdscr, c_Yellow)
                 self.move(0, plen + len(shortcut) + 1)
-                #self.move(0, plen + len(shortcut) + 1, self.stdscr)
             elif k == ' ':
                 self.clearline(0, self.stdscr)
                 return None

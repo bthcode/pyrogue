@@ -51,6 +51,8 @@ class Level(object):
         self.AddFeature(dungeon_features.SmallFire(), x, y)
         self.fov = fov.FOVMap(self.width, self.height, self.BlocksVision)
 
+        #self.LogAll()
+
     @TraceCalls(logfile)
     def _add_doors(self):
         "Remove the door terrain and put door features in its place."
@@ -341,6 +343,12 @@ class Level(object):
             # Not in view; show memento:
             tile, color = self.memento[y][x]
         Global.IO.PutTile(x, y, tile, color)        
+
+    def LogAll(self):
+        log("Level LogAll:")
+        for key, creature in self.creatures.items():
+            log("creature at: {0}".format(key))
+            creature.Log()
 
     @TraceCalls(logfile)
     def RandomSquare(self):

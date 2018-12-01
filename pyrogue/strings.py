@@ -96,6 +96,11 @@ class English(object):
     effect_strength_buff_gone_you = "^B^You no longer feel exceptionally strong."
     effect_strength_buff_mob = "%s appears to grow stronger."  # ("The kobold")
     effect_strength_buff_you = "^G^You feel mighty."
+    effect_speed_buff_gone_mob = "%s no longer looks so slow."  # ("The kobold")
+    effect_speed_buff_gone_you = "^B^You speed up."
+    effect_speed_buff_mob = "%s appears to slow down."  # ("The kobold")
+    effect_speed_buff_you = "^G^You slow down."
+
     effect_weapon_plus_dam = "%s glows ^R^bright red^0^ momentarily."  # ("Your dagger")
     effect_weapon_plus_hit = "%s glows ^G^bright green^0^ momentarily."  # ("Your dagger")
     effect_you_minor_healing = "^G^You feel better."

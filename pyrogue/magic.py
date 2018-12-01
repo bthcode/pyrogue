@@ -56,10 +56,10 @@ class BoltSpell(Spell):
 
         return True
 
-    
+
     @TraceCalls(logfile)
     def Cast(self, caster):
-        '''Cast a ball spell at a target.  
+        '''Cast a ball spell at a target.
 
         Requirements
             If the user gives a direction, hit the first thing in that direction
@@ -95,7 +95,7 @@ class BoltSpell(Spell):
                 if mob:
                     target = mob
                 break
-            
+
         Global.IO.AnimateProjectile((actual_path, path_clear), self.projectile_char, self.projectile_color)
         if target:
             damage_taken = target.TakeDamage(self.Damage(caster), type=self.damage_type, source=caster)
@@ -128,7 +128,7 @@ Requirements:
     - bolt
         direction: go until you hit something or end of range
         target: go towards target or end of range
-    ''' 
+    '''
     def Attempt(self, caster, target):
         path, path_clear = caster.GetPathToTarget(target)
 
@@ -158,15 +158,13 @@ Requirements:
                 if caster is Global.pc and target.dead:
                     Global.IO.Message(lang.combat_you_killed % 
                                       (lang.ArticleName("the", target), target.kill_xp))
-               
+
         self.AfterCast(caster)
 
         return True
 
-    
-    
     def Cast(self, caster):
-        '''Cast a ball spell at a target.  
+        '''Cast a ball spell at a target.
 
         Requirements
             If the user gives a direction, hit the first thing in that direction
@@ -198,8 +196,7 @@ Requirements:
                 ty = y
         else:
             return
-            
-              
+
         pts = Global.IO.AnimateAreaEffect(tx, ty, self.radius, self.projectile_char, self.projectile_color)
         if len(pts) == 0: return
         for pt in pts:
@@ -224,7 +221,6 @@ Requirements:
                 if caster is Global.pc and target.dead:
                     Global.IO.Message(lang.combat_you_killed % 
                                       (lang.ArticleName("the", target), target.kill_xp))
-               
         self.AfterCast(caster)
 
 
@@ -246,7 +242,108 @@ class TeleportSpell(Spell):
             caster.current_level.MoveCreature(caster, i, j)
             Global.IO.Message("%s blinks" % lang.ArticleName("the", caster) ) 
 
+class OtherEffectSpell(Spell):
+    "Spells that place a temporary effect on a target"
+    def Attempt(self, caster, target):
 
+        path, path_clear = caster.GetPathToTarget(target)
+
+        # Find the first square along the path where there's an obstacle:
+        actual_path = []
+        for x, y in path[1:]:
+            actual_path.append((x, y))
+            if caster.current_level.BlocksPassage(x, y):
+                # Something here blocks the bolt; see if it's a mob:
+                mob = caster.current_level.CreatureAt(x, y)
+                if mob:
+                    target = mob
+                break
+        Global.IO.AnimateProjectile((actual_path, path_clear), self.projectile_char, self.projectile_color)
+        #damage_taken = target.TakeDamage(self.Damage(caster), type=self.damage_type, source=caster)
+        target.TakeEffect(self.Effect(target), self.Duration(target))
+        color = "^Y^"
+        if caster is Global.pc:
+            self.AfterCast(caster)
+            cp = "Your"
+            color = "^G^"
+        else:
+            cp = lang.ArticleName("The", caster) + "'s"
+        if target is Global.pc:
+            tp = "you"
+            color = "^R^"
+        else:
+            tp = lang.ArticleName("the", target)
+        if Global.pc in (caster, target) or caster.pc_can_see or target.pc_can_see:
+            Global.IO.Message("%s %s %s%s^0^ %s." %
+                (cp, self.name.lower(), color, "barf", tp, color))
+        if caster is Global.pc and target.dead:
+            Global.IO.Message(lang.combat_you_killed % 
+                              (lang.ArticleName("the", target), target.kill_xp))
+
+        return True
+
+
+    @TraceCalls(logfile)
+    def Cast(self, caster):
+        '''Cast a ball spell at a target.
+
+        Requirements
+            If the user gives a direction, hit the first thing in that direction
+            If the user gives a target, hit that first thing along the path
+
+        Args
+            caster - the player
+
+        Returns
+            None
+        '''
+        cmd = Global.IO.GetDirectionOrTarget(caster, target_range=self.range)
+
+        if cmd.type == 'x': # cancel
+            return
+        elif cmd.type == 't': # target
+            tx = cmd.target.x
+            ty = cmd.target.y
+        elif cmd.type == 'd': # direction
+            direction = cmd.direction
+        else:
+            return
+
+        # Find the first square along the path where there's an obstacle or we're at max range
+        actual_path = []
+        target = None
+        for x, y in cmd.path[1:]:
+            actual_path.append((x, y))
+            tx = x
+            ty = y
+            if caster.current_level.BlocksPassage(x, y):
+                mob = caster.current_level.CreatureAt(x, y)
+                if mob:
+                    target = mob
+                break
+
+        Global.IO.AnimateProjectile((actual_path, path_clear), self.projectile_char, self.projectile_color)
+        if target:
+            #damage_taken = target.TakeDamage(self.Damage(caster), type=self.damage_type, source=caster)
+            target.TakeEffect(self.Effect(target), self.Duration(target))
+            color = "^Y^"
+            if caster is Global.pc:
+                cp = "Your"
+                color = "^G^"
+            else:
+                cp = lang.ArticleName("The", caster) + "'s"
+            if target is Global.pc:
+                tp = "you"
+                color = "^R^"
+            else:
+                tp = lang.ArticleName("the", target)
+            if Global.pc in (caster, target) or caster.pc_can_see or target.pc_can_see:
+                Global.IO.Message("%s %s %s%s^0^ %s." %
+                    (cp, self.name.lower(), color, "barf", tp ))
+            if caster is Global.pc and target.dead:
+                Global.IO.Message(lang.combat_you_killed % 
+                                  (lang.ArticleName("the", target), target.kill_xp))
+        self.AfterCast(caster)
 
 
 
@@ -255,6 +352,7 @@ class SelfBuffSpell(Spell):
     harmful = False
     def Cast(self, caster):
         caster.TakeEffect(self.Effect(caster), self.Duration(caster))
+
 
 class Effect(object):
     power = 0
@@ -277,7 +375,7 @@ class Effect(object):
     def Remove(self, target, silent=False):
         "Remove the effect from the target."
         pass    # Implement this in subclass
-        
+
 class Buff(Effect):
     "A beneficial effect that targets a creature."
     pass
@@ -297,7 +395,7 @@ class EquipStatBonus(Effect):
         return None  # Permanent until item is removed.
     def Remove(self, target, silent=False):
         target.stats.Unmodify(self.statmod)
-        
+
 class DexBuff(Buff):
     name = "Agility"
     def __init__(self, amount=1, desc="Agility"):
@@ -316,7 +414,7 @@ class DexBuff(Buff):
                 Global.IO.Message(lang.effect_agility_buff_gone_you)
             elif target.pc_can_see:
                 Global.IO.Message(lang.effect_agility_buff_gone_mob % lang.ArticleName("The", target))
-               
+
 class StrBuff(Buff):
     name = "Might"
     def __init__(self, amount=1, desc="Might"):
@@ -335,10 +433,54 @@ class StrBuff(Buff):
                 Global.IO.Message(lang.effect_strength_buff_gone_you)
             elif target.pc_can_see:
                 Global.IO.Message(lang.effect_strength_buff_gone_mob % lang.ArticleName("The", target))
-                
-                
+
+class SpeedBuff(Buff):
+    name = "Speed"
+    def __init__(self, amount=1, desc="Speed"):
+        self.amount, self.desc = amount, desc
+    def Apply(self, target, silent=False):
+        log("Speed Buf Apply target={0}:{1}".format(target, target.move_speed))
+        target.move_speed   = max(1, target.move_speed + self.amount)
+        target.attack_speed = max(1, target.attack_speed + self.amount)
+        target.cast_speed   = max(1, target.cast_speed + self.amount)
+        log("Speed Buf Apply target={0}:{1}".format(target, target.move_speed))
+        if not silent:
+            if target is Global.pc:
+                Global.IO.Message(lang.effect_speed_buff_you)
+            elif target.pc_can_see:
+                Global.IO.Message(lang.effect_speed_buff_mob % lang.ArticleName("The", target))
+    def Remove(self, target, silent=False):
+        log("Speed Buf Remove target={0}:{1}".format(target, target.move_speed))
+        target.move_speed   -= self.amount
+        target.attack_speed -= self.amount
+        target.cast_speed   -= self.amount
+        log("Speed Buf Remove target={0}:{1}".format(target, target.move_speed))
+        if not silent:
+            if target is Global.pc:
+                Global.IO.Message(lang.effect_speed_buff_gone_you)
+            elif target.pc_can_see:
+                Global.IO.Message(lang.effect_speed_buff_gone_mob % lang.ArticleName("The", target))
+
+
+
+
 
 ####################### SPECIFIC MAGIC SPELLS ############################
+
+class SlowOther(OtherEffectSpell):
+    name = "Slow Other"
+    shortcut = "wot"
+    harmful = True
+    level = 1
+    mp_cost = 1
+    range = 20
+    projectile_char, projectile_color = '*', c_Cyan
+    desc = "Slow the other guy"
+    def Duration(self, target):
+        return 1000
+    def Effect(self, target):
+        return SpeedBuff(-90)
+
 
 class AgilitySpell(SelfBuffSpell):
     name = lang.spellname_agility

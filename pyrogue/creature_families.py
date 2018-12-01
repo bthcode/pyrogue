@@ -6,7 +6,8 @@ import pyro_items
 import dungeon_features
 import astar
 import magic
-        
+import pprint
+
 class Bite(pyro_items.MeleeAttackType):
     range = 1
     name = "bite"
@@ -19,7 +20,6 @@ class Claw(pyro_items.MeleeAttackType):
     verbs = lang.verbs_claw
     verbs_sp = lang.verbs_claw_2p
     damage = "1d4"
-
 
 class AI(object):
     "Artificial intelligence for mobs."
@@ -67,7 +67,7 @@ class Berserker(AI):
             elif self.mob.can_see_pc:
                 self.tx, self.ty = pc.x, pc.y
                 if self.mob.CanAttack(pc):
-                    walk_or_attack = weighted_choice( [('Walk', 1), ('Attack', 1)] )
+                    walk_or_attack = weighted_choice( [('Walk', 1), ('Attack', 3)] )
                     if walk_or_attack == 'Attack':
                         self.mob.Attack(pc)
                         return
@@ -107,11 +107,10 @@ class Berserker(AI):
 class Creature(object):
     "An animate object."
     name = "Generic Creature"   # If this is seen in-game, it's a bug.
-    can_open_doors = False
-    is_pc, can_see_pc, pc_can_see = False, False, False
-    # Default stats:
-    hp_max, mp_max = 10, 0
-    hp, mp = hp_max, mp_max
+    hp_max = 10
+    mp_max = 0
+    hp = hp_max
+    mp = mp_max
     tile = "@"
     color = c_Magenta
     AIType = Berserker
@@ -124,9 +123,16 @@ class Creature(object):
     free_motion = False
     friendly = False
     age = 0  # Strictly increasing timer for effect durations, regeneration, etc.
-    heal_timer, mana_timer = 0, 0  # For regeneration
-    effects = []
+    heal_timer = 0
+    mana_timer = 0 # For regeneration
+    can_open_doors = False
+    is_pc          = False
+    can_see_pc     = False
+    pc_can_see     = False
+
     def __init__(self):
+
+        self.effects = []
         self.equipped, self.unequipped = [], []   # By default, no equip slots
         self.x, self.y, self.current_level = 0, 0, None
         self.stats = Stats()
@@ -142,6 +148,12 @@ class Creature(object):
         if not self.is_pc:
             # For now, have every mob drop a level-appropriate item:
             self.inventory.Pickup(pyro_items.random_item(int_range(self.level, self.level/4.0, 2)))
+    def to_dict(self):
+        d = {}
+        for attr in ['name', 'color', 'hp', 'hp_max', 'level', 'can_see_pc', 'x', 'y',
+                     'move_speed', 'attack_speed', 'cast_speed', 'kill_xp']:
+            d[attr] = getattr(self, attr)
+        return d
     def Attack(self, target):
         ''' TODO: combine melee item into attacks '''
         log ('Attack!')
@@ -260,6 +272,7 @@ class Creature(object):
                 self.mp -= 1
     def RemoveEffect(self, effect):
         "Remove an effect from the mob if it's still there."
+        log ("Remove Effect: {0}".format(self))
         try:
             self.effects.remove(effect)
             effect.Remove(self, silent=True)
@@ -296,6 +309,7 @@ class Creature(object):
         return amount
     def TakeEffect(self, new_effect, duration):
         "Apply a temporary or permanent effect to the creature."
+        log("TakeEffect: {0}".format(self))
         if duration is None:
             new_effect.expiration = None
         else:
@@ -308,6 +322,11 @@ class Creature(object):
         if not overrides:
             new_effect.Apply(self)
             self.effects.append(new_effect)
+            log("TakeEffect:  {0}:{1}".format(self, new_effect))
+    def Log(self):
+        log(self)
+        log(pprint.pformat(self.effects))
+        log(pprint.pformat(self.to_dict()))
     def TryAttack(self, target):
         # Mob has tried to move onto another mob; possibly attack.
         # This would be the place to abort an attack on a friendly mob, etc.
@@ -336,6 +355,7 @@ class Creature(object):
         expired_effects = [e for e in self.effects if e.expiration is not None
                            and e.expiration < self.age]
         for e in expired_effects:
+            log( "UpdateEffects remove: {0}".format(self))
             e.Remove(self)
             self.effects.remove(e)
         # TODO: add item updates too, once that type of effect exists

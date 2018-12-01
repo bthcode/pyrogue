@@ -8,7 +8,7 @@ from util import *
 from curses import wrapper
 
 import creatures
-import pyro_items 
+import pyro_items
 import player
 import dungeons
 import io_curses as io
@@ -39,7 +39,7 @@ class Pyro(object):
 
     def Run(self):
         '''
-        Main while loop running the game 
+        Main while loop running the game
         '''
         #Global.IO.ClearScreen()
         try:
@@ -52,27 +52,25 @@ class Pyro(object):
         '''
         Saves to a pickle file
 
-        Args: 
+        Args:
             savefile (str): file to save to
 
-        Returns:    
+        Returns:
             None
         '''
 
         Global.IO.DisplayText("Saving to file {0}".format(savefile))
         pickle.dump(self, open(savefile, 'wb'))
-        
-        
+
 class Game(object):
     '''Holds all game data
-    
+
     Attributes:
         dungeon: An instance of :class:`pyrogue.dungeons.Dungeon`
         current_level: An instance of :class:`pyrogue.dungeons.Level`
         pc: An instance of :class:`pyrogue.player.PlayerCharacter`
 
     '''
-    
     def __init__(self):
         # Create the dungeon and the first level:
         self.dungeon = dungeons.Dungeon("Dingy Dungeon")
@@ -85,7 +83,6 @@ class Game(object):
     def Update(self):
         "Execute a single game turn."
         self.current_level.Update()
-        
 ############################ MAIN ###############################
 
 def StartGame(stdscr):
@@ -118,7 +115,7 @@ def LoadGame(savefile):
         Global.pc   = p.game.pc
         Global.pyro.Run()
     finally:
-        Global.IO.Shutdown() 
+        Global.IO.Shutdown()
 # end LoadGame
 
 if __name__ == "__main__":
@@ -132,4 +129,3 @@ if __name__ == "__main__":
         wrapper(LoadGame(args.savefile))
     else:
         wrapper(StartGame)
-            

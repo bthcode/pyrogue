@@ -968,6 +968,7 @@ class DisElf(Archetype):
         pc.spells.append(magic.FireBall())
         pc.spells.append(magic.Blink())
         pc.spells.append(magic.Teleport())
+        pc.spells.append(magic.SlowOther())
 class KrolHuman(Archetype):
     name = lang.archname_krolhuman
     cname = lang.archname_krolhuman_short
@@ -1001,8 +1002,3 @@ class DisHuman(Archetype):
         Archetype.__init__(self, pc)
         pc.stats = creatures.Stats(8, 11, 5)
         self.stat_gains = ['dex', 'any', 'dex', 'str']
-
-    
-    
-    
-    
