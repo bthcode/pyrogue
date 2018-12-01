@@ -8,6 +8,7 @@ import dungeon_features
 import random
 from io_curses import *
 
+
 class Dungeon(object):
     "An entire multilevel dungeon."
     def __init__(self, name="dungeon"):
@@ -29,6 +30,7 @@ class Dungeon(object):
         L = Level(self, i)
         return L
 
+
 class Level(object):
     "A single level of a dungeon."
     def __init__(self, dungeon, depth):
@@ -40,7 +42,8 @@ class Level(object):
         self.mob_actions = []
         self.dirty = {}
         self.layout = dungeon_gen.Level()
-        self.width, self.height = self.layout.level_width, self.layout.level_height
+        self.width = self.layout.level_width
+        self.height = self.layout.level_height
         self.memento = [[[" ", c_white]] * self.width
                         for i in range(self.height)]
         self._add_doors()
@@ -50,8 +53,6 @@ class Level(object):
         x, y = self.RandomSquare()
         self.AddFeature(dungeon_features.SmallFire(), x, y)
         self.fov = fov.FOVMap(self.width, self.height, self.BlocksVision)
-
-        #self.LogAll()
 
     @TraceCalls(logfile)
     def _add_doors(self):
@@ -84,12 +85,13 @@ class Level(object):
         "Add mobs to the level."
         # Add a random number of mobs to each room:
         # (Don't add in the first room of the first level)
-        rooms = [room for room in self.layout.rooms 
-                 if not(self.depth==1 and room==self.up_room)]
+        rooms = [room for room in self.layout.rooms
+                 if not(self.depth == 1 and room == self.up_room)]
         for (x, y, w, h) in rooms:
             mobs = d("3d2-3")
             for m in range(mobs):
-                for n in range(5): # Try at most 5 times to find a spot: TODO: ugly
+                # Try at most 5 times to find a spot: TODO: ugly
+                for n in range(5):
                     i, j = irand(x, x+w-1), irand(y, y+h-1)
                     if not (self.CreatureAt(i, j) or self.FeatureAt(i, j)):
                         mob = creatures.RandomMob(self.depth)
@@ -102,7 +104,7 @@ class Level(object):
     def AddCreature(self, mob, x, y):
         "Add a mob to the level at position x, y."
         # Make sure the space isn't already occupied by a mob:
-        assert not (x,y) in self.creatures  # Can't stack mobs.
+        assert not (x, y) in self.creatures  # Can't stack mobs.
         self.creatures[(x, y)] = mob
         mob.x, mob.y, mob.current_level = x, y, self
         if len(self.mob_actions) > 0:
@@ -116,7 +118,7 @@ class Level(object):
     @TraceCalls(logfile)
     def AddFeature(self, feature, x, y):
         "Add a feature to the level at position x, y."
-        assert not (x,y) in self.features  # Can't stack features.
+        assert not (x, y) in self.features  # Can't stack features.
         self.features[(x, y)] = feature
         feature.x, feature.y, feature.current_level = x, y, self
         self.Dirty(x, y)
@@ -128,7 +130,7 @@ class Level(object):
             # Randomly place it somewhere in the level:
             x, y = self.RandomSquare()
             self.items.append(item)
-        if (x,y) in self.items:
+        if (x, y) in self.items:
             # See if there's a stack of this item already; if so, add it:
             for existing_item in self.items[(x, y)]:
                 if item.StacksWith(existing_item):
@@ -147,7 +149,7 @@ class Level(object):
     @TraceCalls(logfile)
     def PushItem(self, item, x, y):
         "Add the item at x, y, pushing existing item(s) out of the way."
-        if not (x,y) in self.items:
+        if not (x, y) in self.items:
             # Nothing there; just place it:
             self.items[(x, y)] = [item]
             item.x, item.y, item.current_level = x, y, self
@@ -167,9 +169,9 @@ class Level(object):
         adj = []
         for i in range(x-1, x+2):
             for j in range(y-1, y+2):
-                if (0 <= i < self.layout.level_width
-                and 0 <= j < self.layout.level_height
-                and not (i==x and j==y)):
+                if (0 <= i < self.layout.level_width and
+                    0 <= j < self.layout.level_height and
+                    not (i == x and j == y)):
                     adj.append((i, j))
         return adj
 
@@ -180,8 +182,8 @@ class Level(object):
     @TraceCalls(logfile)
     def BlocksPassage(self, x, y):
         "Return whether the square at (x, y) blocks movement and firing."
-        if not (0 <= x < self.layout.level_width
-        and 0 <= y < self.layout.level_height):
+        if not (0 <= x < self.layout.level_width and
+                0 <= y < self.layout.level_height):
             # Squares outside the level are considered to block passage:
             return True
         if self.layout.data[y][x] == WALL:
@@ -192,13 +194,13 @@ class Level(object):
         except AttributeError:
             pass
         if self.CreatureAt(x, y):
-            return True        
+            return True
 
     @TraceCalls(logfile)
     def BlocksVision(self, x, y):
         "Return whether the square at (x, y) blocks vision."
-        if not (0 <= x < self.layout.level_width
-        and 0 <= y < self.layout.level_height):
+        if not (0 <= x < self.layout.level_width and
+                0 <= y < self.layout.level_height):
             # Squares outside the level are considered to block light:
             return True
         if self.layout.data[y][x] == WALL:
@@ -245,7 +247,7 @@ class Level(object):
         try:
             return self.features[(x, y)]
         except KeyError:
-            return None        
+            return None
 
     @TraceCalls(logfile)
     def IsEmpty(self, x, y):
@@ -259,14 +261,14 @@ class Level(object):
     def GetCoordsNear(self, x, y):
         r = 2
         while True:
-            for i in range(x-r,x+r):
+            for i in range(x-r, x+r):
                 for j in range(y-r, y+r):
                     if i < 0 or i > self.width:
                         continue
                     if j < 0 or j > self.height:
                         continue
-                    if self.IsEmpty(i,j):
-                        return i,j
+                    if self.IsEmpty(i, j):
+                        return i, j
             r += 1
 
     @TraceCalls(logfile)
@@ -280,8 +282,8 @@ class Level(object):
             max_y = min(y+r, self.height-1)
             i = random.randint(min_x, max_x)
             j = random.randint(min_y, max_y)
-            if self.IsEmpty( i, j):
-                return i,j
+            if self.IsEmpty(i, j):
+                return i, j
             attempts += 1
         return None, None
 
@@ -289,7 +291,6 @@ class Level(object):
     def ItemsAt(self, x, y):
         "Return a list of pyro_items at x, y."
         return self.items.get((x, y), [])
-        #return [i for i in self.items if i.x == x and i.y == y]
 
     @TraceCalls(logfile)
     def MoveCreature(self, mob, new_x, new_y):
@@ -342,7 +343,7 @@ class Level(object):
         else:
             # Not in view; show memento:
             tile, color = self.memento[y][x]
-        Global.IO.PutTile(x, y, tile, color)        
+        Global.IO.PutTile(x, y, tile, color)
 
     def LogAll(self):
         log("Level LogAll:")
@@ -370,14 +371,16 @@ class Level(object):
             del self.creatures[k]
         try:
             self.mob_actions.remove(mob)
-        except ValueError: pass
+        except ValueError:
+            pass
         mob.current_level = None
 
     @TraceCalls(logfile)
     def RemoveItem(self, item):
         "Remove the item from the level."
         keys = [k for k in self.items if item in self.items[k]]
-        assert len(keys) == 1  # Can't remove non-existant item; item can't be in many places.
+        # Can't remove non-existant item; item can't be in many places.
+        assert len(keys) == 1
         for k in keys:
             self.items[k].remove(item)
             self.Dirty(item.x, item.y)
@@ -391,5 +394,3 @@ class Level(object):
         self.timer = mob.timer
         mob.Update()
         self.mob_actions.sort(key=lambda m: m.timer)
-        
-
