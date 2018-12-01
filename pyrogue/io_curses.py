@@ -9,46 +9,6 @@ import pyro_items
 import sys
 from functools import wraps
 
-logfile=open('trace.txt', 'w')
-
-class TraceCalls(object):
-    """ Use as a decorator on functions that should be traced. Several
-        functions can be decorated - they will all be indented according
-        to their call depth.
-    """
-    def __init__(self, stream=sys.stdout, indent_step=2, show_ret=False):
-        self.stream = stream
-        self.indent_step = indent_step
-        self.show_ret = show_ret
-
-        # This is a class attribute since we want to share the indentation
-        # level between different traced functions, in case they call
-        # each other.
-        TraceCalls.cur_indent = 0
-
-    def __call__(self, fn):
-        @wraps(fn)
-        def wrapper(*args, **kwargs):
-            indent = ' ' * TraceCalls.cur_indent
-            argstr = ', '.join(
-                [repr(a) for a in args] +
-                ["%s=%s" % (a, repr(b)) for a, b in kwargs.items()])
-            self.stream.write('%s%s(%s)\n' % (indent, fn.__name__, argstr))
-
-            TraceCalls.cur_indent += self.indent_step
-            ret = fn(*args, **kwargs)
-            TraceCalls.cur_indent -= self.indent_step
-
-            if self.show_ret:
-                self.stream.write('%s--> %s\n' % (indent, ret))
-            return ret
-        return wrapper
-
-
-
-OPTIMIZE_OUTPUT = True      # Whether to buffer curses output (False won't work yet)
-MESSAGE_LINES = 2
-
 # Check what OS we're running under; keycodes differ:
 WINDOWS = False
 try:
@@ -184,7 +144,6 @@ class IOWrapper(object):
 
         self.clear()
 
-    @TraceCalls(logfile)
     def calc_layout(self):
         self.height, self.width = self.stdscr.getmaxyx()
         self.game_height   = self.height - self.msg_height - self.status_height
@@ -198,7 +157,6 @@ class IOWrapper(object):
         curses.doupdate()
         self.pad.touchwin()
 
-    @TraceCalls(logfile)
     def clear(self):
         self.dattr = self.colors[0]
         self.chars = [[" "] * self.width for i in range(self.height)]
@@ -212,7 +170,6 @@ class IOWrapper(object):
             win.refresh()
         Global.FullDungeonRefresh = True
 
-    @TraceCalls(logfile)
     def clearline(self, lines, win):
         "Clear one or more lines."
         try:
@@ -221,15 +178,12 @@ class IOWrapper(object):
         except TypeError:
             self.addstr(lines, 0, ' ' * self.width, win, c_white)
 
-    @TraceCalls(logfile)
     def getch(self):
         return self.screen.getch()
 
-    @TraceCalls(logfile)
     def keypad(self, arg):
         return self.screen.keypad(arg)
 
-    @TraceCalls(logfile)
     def move(self, y, x):
         y,x = Global.pc.y, Global.pc.x
         x_step = self.game_width  // 2
@@ -271,7 +225,6 @@ class IOWrapper(object):
         if True or self.chars[y][x] != ch or self.attrs[y][x] != attr:
             self.pad.addstr(y, x, ch, curses.color_pair(attr))
 
-    @TraceCalls(logfile)
     def refresh(self):
         Global.FullDungeonRefresh = True
         self.msg_win.addstr(1,1,'msgs')
@@ -283,7 +236,6 @@ class IOWrapper(object):
         self.pad.touchwin()
         self.stdscr.refresh()
 
-    @TraceCalls(logfile)
     def AnimateProjectile(self, path, char, color):
         "Show a projectile traveling the specified path."
         path, clear = path
@@ -298,7 +250,6 @@ class IOWrapper(object):
             self.move(Global.pc.y, Global.pc.x)
             self.refresh()
 
-    @TraceCalls(logfile)
     def AnimateAreaEffect(self, tx, ty, radius, char, color):
         '''Show a 'Ball' effect, returning the affected points
 
@@ -326,7 +277,6 @@ class IOWrapper(object):
             self.move(Global.pc.y, Global.pc.x)
         return pts
 
-    @TraceCalls(logfile)
     def Ask(self, question, opts, attr=c_yellow):
         "Ask the player a question."
         self.Message(question)
@@ -339,18 +289,15 @@ class IOWrapper(object):
         self.messages_displayed = 0
         return answer
 
-    @TraceCalls(logfile)
     def BeginTurn(self):
         "Called right after input is taken from the player."
         self.screen.addstr(0, 0, " " * self.width)
         self.screen.addstr(1, 0, " " * self.width)
         self.messages_displayed = 0
 
-    @TraceCalls(logfile)
     def ClearScreen(self):
         self.screen.clear()
 
-    @TraceCalls(logfile)
     def CreatureSymbol(self, mob):
         "Return a message code for a mob's symbol."
         tile = mob.tile
@@ -360,7 +307,6 @@ class IOWrapper(object):
                 color = "^%s^" % k
         return "%s%s^0^" % (color, tile)
 
-    @TraceCalls(logfile)
     def CommandList(self, pc, lattr=c_yellow, hattr=c_Yellow):
         "Display the keyboard commands to the player."
         L = []
@@ -396,7 +342,6 @@ class IOWrapper(object):
         self.ClearScreen()
         return
 
-    @TraceCalls(logfile)
     def DetailedStats(self, pc):
         "Show a detailed player stats screen."
         self.screen.clear()
@@ -436,7 +381,6 @@ class IOWrapper(object):
         self.GetKey()
         self.screen.clear()
 
-    @TraceCalls(logfile)
     def DisplayInventory(self, mob, norefresh=False, equipped=False, types=""):
         "Display inventory."
         # TODO: remove norefresh
@@ -483,7 +427,6 @@ class IOWrapper(object):
                     y += 1
         return y
 
-    @TraceCalls(logfile)
     def DisplayText(self, text, attr=c_white):
         "Display multiline text (\n separated) and wait for a keypress."
         self.ClearScreen()
@@ -493,7 +436,6 @@ class IOWrapper(object):
         self.GetKey()
         self.ClearScreen()
 
-    @TraceCalls(logfile)
     def DrawPathToTarget(self):
         if self.path_clear:
             color = c_green
@@ -503,7 +445,6 @@ class IOWrapper(object):
             self.PutChar(y, x, "*", color)
             Global.pc.current_level.Dirty(x, y)
 
-    @TraceCalls(logfile)
     def EndTurn(self):
         "Called right before input is taken from the player."
         # Put the cursor on the @:
@@ -513,7 +454,6 @@ class IOWrapper(object):
         else:
             self.move(Global.pc.y, Global.pc.x)
 
-    @TraceCalls(logfile)
     def GetChoice(self, item_list, prompt="Choose one: ", nohelp=False, nocancel=True):
         "Allow the player to choose from a list of options with descriptions."
         # item_list must be a list of objects with attributes 'name' and 'desc'.
@@ -552,7 +492,6 @@ class IOWrapper(object):
         self.refresh()
         return choice
 
-    @TraceCalls(logfile)
     def GetDirection(self):
         "Ask the player for a direction."
         self.addstr(0, 0, lang.prompt_which_direction, self.stdscr)
@@ -576,7 +515,6 @@ class IOWrapper(object):
         self.addstr(0, 0, " " * self.width, self.stdscr)
         return r
 
-    @TraceCalls(logfile)
     def GetDirectionOrTarget(self, caster, target_range=None):
         '''Return a direction or a target for targetting.
 
@@ -632,8 +570,7 @@ class IOWrapper(object):
                 break
         self.addstr(0, 0, " " * self.width, self.stdscr)
         return cmd
-       
-    @TraceCalls(logfile)
+
     def GetItemFromInventory(self, mob, prompt=None, equipped=False, types="", notoggle=False):
         "Ask the player to choose an item from inventory."
         # If notoggle is true, then the player can't move between equipped and backpack
@@ -681,7 +618,6 @@ class IOWrapper(object):
         self.ShowStatus()
         return item
 
-    @TraceCalls(logfile)
     def GetKey(self):
         "Return the next keystroke in queue, blocking if none."
         self.screen.refresh()
@@ -695,7 +631,6 @@ class IOWrapper(object):
             k = self.screen.getch()
             return k
 
-    @TraceCalls(logfile)
     def GetLocation(self, prompt=lang.prompt_choose_location):
         "Ask the player to specify a square in the current level."
         x, y = Global.pc.x, Global.pc.y
@@ -720,14 +655,12 @@ class IOWrapper(object):
         self.addstr(0, 0, " " * self.width, self.stdscr)
         return r
 
-    @TraceCalls(logfile)
     def GetMonsterChoice(self, prompt):
         monster = Global.IO.GetString(prompt,  noblank=True,
                                         pattr=c_yellow, iattr=c_Yellow)
         self.clearline(0, self.stdscr)
         return monster
 
-    @TraceCalls(logfile)
     def GetQuantity(self, max_qty=None, prompt="How many?"):
         if max_qty:
             range = "1-%s, " % max_qty
@@ -751,7 +684,6 @@ class IOWrapper(object):
                 qty = min(qty, max_qty)
             return qty
 
-    @TraceCalls(logfile)
     def GetSpell(self):
         "Ask the player to choose a spell."
         self.clearline(0, self.stdscr)
@@ -791,7 +723,6 @@ class IOWrapper(object):
         Global.pc.last_spell = shortcut
         return spell
 
-    @TraceCalls(logfile)
     def GetString(self, prompt, x=0, y=0, pattr=c_yellow, iattr=c_yellow,
                   max_length=999, noblank=False, nostrip=False, mask=None):
         "Prompt the user for a string and return it."
@@ -816,14 +747,12 @@ class IOWrapper(object):
                         return str.strip()
             self.addstr(y, x, str+" ", self.stdscr, iattr)
 
-    @TraceCalls(logfile)
     def GetTarget(self, prompt=lang.prompt_choose_target, LOS=True, target=None, target_range=None):
         """Ask the player to target a mob.
 
         Returns:
             mob : a creature selected for targetting
             (path, blocked) : list of Squares in the path,  list of blocked squres
-        
         """
         path, clear = [], False
         mobs = self.NearbyMobCycler(target_range=target_range)
@@ -906,7 +835,6 @@ class IOWrapper(object):
             Global.pc.current_level.PaintSquare(i, j)
         return mob, (path, clear)
 
-    @TraceCalls(logfile)
     def Menu(self, items=[], x=0, y=0, doublewide=False, extra_opts="",
              prompt=lang.prompt_menu_default, question="", attr=c_yellow,
              key_attr=c_Yellow, prompt_attr=c_Yellow):
@@ -961,7 +889,6 @@ class IOWrapper(object):
                 return ch
 
 
-    @TraceCalls(logfile)
     def Message(self, msg, attr=c_yellow, nowait=False, forcewait=False):
         "Display a message to the player, wrapping and pausing if necessary."
         if not msg.strip():
@@ -971,7 +898,6 @@ class IOWrapper(object):
             self.message_log.append((m, attr))
             self.message_log = self.message_log[-MESSAGE_LOG_SIZE:]
 
-    @TraceCalls(logfile)
     def MessageLog(self):
         self.clear()
         for i in range(1, min(len(self.message_log)+1, self.height)):
@@ -981,7 +907,6 @@ class IOWrapper(object):
         self.GetKey()
         self.clear()
 
-    @TraceCalls(logfile)
     def MorePrompt(self):
         if self.messages_displayed > 1:
             self.addstr(1, self.width-7, lang.prompt_more, self.stdscr, c_Yellow)
@@ -990,7 +915,6 @@ class IOWrapper(object):
             self.addstr(0, 0, " " * self.width, self.stdscr)
             self.addstr(1, 0, " " * self.width, self.stdscr)
 
-    @TraceCalls(logfile)
     def NearbyMobCycler(self, target_range=None):
         "Return a Cycler instance for mobs near the PC."
         # Build a list of targetable mobs:
@@ -1006,11 +930,9 @@ class IOWrapper(object):
         targets.sort(key=lambda m: (m[0].x-Global.pc.x)**2 + (m[0].y-Global.pc.y)**2)
         return Cycler(targets)
 
-    @TraceCalls(logfile)
     def PutTile(self, x, y, tile, color):
         self.PutChar(y, x, tile, color)
 
-    @TraceCalls(logfile)
     def ShowMessage(self, msg, attr, nowait, forcewait):
         self.MorePrompt()
         self.addstr_color(self.messages_displayed, 0, msg, self.stdscr, attr)
@@ -1023,7 +945,6 @@ class IOWrapper(object):
         else:
             self.messages_displayed += 1
 
-    @TraceCalls(logfile)
     def ShowStatus(self):
         "Show key stats to the player."
         p = Global.pc
@@ -1068,7 +989,6 @@ class IOWrapper(object):
         status_lines.append(line)
         self.set_status(status_lines)
 
-    @TraceCalls(logfile)
     def Shutdown(self):
         "Shut down the IO system."
         # Restore the terminal settings:
@@ -1077,7 +997,6 @@ class IOWrapper(object):
         curses.nocbreak()
         curses.endwin()
 
-    @TraceCalls(logfile)
     def TabTarget(self):
         "Allow the player to cycle through available targets."
         if not self.tab_targeting:
@@ -1093,12 +1012,10 @@ class IOWrapper(object):
         self.Message("%s: ^Y^%s%s" % (lang.label_now_targeting, mob.Name().title(), blocked))
         Global.pc.target = mob
 
-    @TraceCalls(logfile)
     def WaitPrompt(self, y, attr=c_white, prompt=lang.prompt_any_key):
         self.addstr(y, 0, prompt, self.stdscr, attr)
         self.GetKey()
 
-    @TraceCalls(logfile)
     def YesNo(self, question, attr=c_yellow):
         "Ask the player a yes or no question."
         self.MorePrompt()
@@ -1119,14 +1036,12 @@ class IOWrapper(object):
         self.messages_displayed = 0
         return answer
 
-    @TraceCalls(logfile)
     def set_status(self, lines):
         for idx, line in enumerate(lines):
             self.addstr_color(idx+1,1,' ' * len(line), self.status_win)
             self.addstr_color(idx+1,1,line, self.status_win)
         self.status_win.refresh()
 
-    @TraceCalls(logfile)
     def addstr(self, y, x, s, win, attr=c_yellow):
         strs = s.split("\n")
         for s in strs:
@@ -1134,7 +1049,6 @@ class IOWrapper(object):
             y += 1
         return y - 1
 
-    @TraceCalls(logfile)
     def addstr_color(self, y, x, text, win,  attr=c_yellow):
         "addstr with embedded color code support."
         # Color codes are ^color^, for instance,

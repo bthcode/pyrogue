@@ -64,7 +64,6 @@ class PlayerCharacter(creatures.Humanoid):
         self.target = None
         self.current_level = None
 
-    @TraceCalls(logfile)
     def AdjacentPassableSquares(self):
         "Return a list of adjacent squares the player can move into."
         adj = []
@@ -77,11 +76,9 @@ class PlayerCharacter(creatures.Humanoid):
                     adj.append((self.x+dx, self.y+dy))
         return adj
 
-    @TraceCalls(logfile)
     def AscendStairs(self):
         self.UseStairs("ascend")
 
-    @TraceCalls(logfile)
     def Attack(self, target):
         "Attack the given creature."
         try:
@@ -90,7 +87,6 @@ class PlayerCharacter(creatures.Humanoid):
             attack = self.unarmed
         success = attack.Attempt(self, target)
 
-    @TraceCalls(logfile)
     def AutoRest(self):
         if self.run_count > 100 or self.FullyRested():
             self.resting = False
@@ -105,7 +101,6 @@ class PlayerCharacter(creatures.Humanoid):
         if self.run_count % 10 == 0:
             Global.IO.screen.refresh()
 
-    @TraceCalls(logfile)
     def AutoRun(self):
         self.run_count += 1
         self.ran.append((self.x, self.y))
@@ -144,13 +139,11 @@ class PlayerCharacter(creatures.Humanoid):
             if True and self.run_count % 1 == 0:
                 Global.IO.screen.refresh()
 
-    @TraceCalls(logfile)
     def BeginAutoRest(self):
         self.resting = True
         self.run_count = 0
         Global.IO.Message(lang.msg_resting, nowait=True)
 
-    @TraceCalls(logfile)
     def BeginAutoRun(self):
         "Move in the given direction until something interesting happens."
         mdir, dx, dy = Global.IO.GetDirection()
@@ -172,13 +165,11 @@ class PlayerCharacter(creatures.Humanoid):
             if (x <= self.x+dx < x+w) and (y <= self.y+dy < y+h):
                 self.run_in_room = True
 
-    @TraceCalls(logfile)
     def CastSpell(self):
         spell = Global.IO.GetSpell()
         if spell:
             spell.Cast(self)
 
-    @TraceCalls(logfile)
     def Cheat(self):
 
         class Cheat:
@@ -293,20 +284,16 @@ class PlayerCharacter(creatures.Humanoid):
         if cheat is not None:
             cheat.fn()
 
-    @TraceCalls(logfile)
     def CommandList(self):
         Global.IO.CommandList(self)
 
-    @TraceCalls(logfile)
     def DescendStairs(self):
         self.UseStairs("descend")
 
-    @TraceCalls(logfile)
     def DetailedStats(self):
         "Show a detailed player stats screen."
         Global.IO.DetailedStats(self)
 
-    @TraceCalls(logfile)
     def Die(self):
         if self.immortal:
             # Allow the player to refuse death:
@@ -318,7 +305,6 @@ class PlayerCharacter(creatures.Humanoid):
         Global.IO.Message(lang.msg_you_die, forcewait=True)
         raise GameOver
 
-    @TraceCalls(logfile)
     def DropItem(self):
         "Drop an item on the floor."
         item = Global.IO.GetItemFromInventory(self, lang.prompt_drop)
@@ -333,7 +319,6 @@ class PlayerCharacter(creatures.Humanoid):
             Global.IO.Message(msg)
             return success
 
-    @TraceCalls(logfile)
     def EndGame(self):
         if Global.IO.YesNo(lang.prompt_save):
             self.SaveGame()
@@ -341,13 +326,11 @@ class PlayerCharacter(creatures.Humanoid):
         elif Global.IO.YesNo(lang.prompt_quit):
             raise GameOver
 
-    @TraceCalls(logfile)
     def EquippedInventory(self):
         Global.IO.DisplayInventory(self, equipped=True)
         Global.IO.GetKey()
         Global.IO.ClearScreen()
 
-    @TraceCalls(logfile)
     def ExamineItem(self):
         "Show a detailed description of an item."
         item = Global.IO.GetItemFromInventory(self, lang.prompt_examine)
@@ -355,7 +338,6 @@ class PlayerCharacter(creatures.Humanoid):
             return False   # Cancelled
         Global.IO.DisplayText(item.LongDescription(), c_yellow)
 
-    @TraceCalls(logfile)
     def Fire(self):
         "Fire a missile weapon."
         # See if there's an equipped missile weapon:
@@ -429,13 +411,11 @@ class PlayerCharacter(creatures.Humanoid):
             else:
                 report_combat_miss(self, target, bow.verbs, bow.verbs_sp)
 
-    @TraceCalls(logfile)
     def FullyRested(self):
         return (True
                 and self.hp >= self.hp_max
                 and self.mp >= self.mp_max)
 
-    @TraceCalls(logfile)
     def GainLevel(self):
         if self.level > 0:
             Global.IO.Message(lang.msg_you_gain_level % (self.level+1))
@@ -444,7 +424,6 @@ class PlayerCharacter(creatures.Humanoid):
         if self.level > 1:
             Global.IO.ShowStatus()
 
-    @TraceCalls(logfile)
     def GainStatPermanent(self, stat):
         if stat == "any":
             while True:
@@ -494,11 +473,9 @@ class PlayerCharacter(creatures.Humanoid):
             raise ValueError(stat)
         Global.IO.Message(lang.msg_you_feel_improved % adj)
 
-    @TraceCalls(logfile)
     def GainXP(self, amount):
         self.xp += amount
 
-    @TraceCalls(logfile)
     def GetTarget(self, target_range=None):
         "Ask the player for a target."
         # TODO:
@@ -512,7 +489,6 @@ class PlayerCharacter(creatures.Humanoid):
                                             self.current_level.BlocksPassage)
         return t, p
 
-    @TraceCalls(logfile)
     def InitCommands(self):
         self.commands = []
         self.commands.append(Command(lang.cmdname_inventory, 'i', self.Inventory))
@@ -541,17 +517,14 @@ class PlayerCharacter(creatures.Humanoid):
         self.commands.append(Command(lang.cmdname_cheat, 'C', self.Cheat))
         self.commands.append(Command(lang.cmdname_save, 's', self.SaveGame))
 
-    @TraceCalls(logfile)
     def Inventory(self):
         Global.IO.DisplayInventory(self)
         Global.IO.GetKey()
         Global.IO.ClearScreen()
 
-    @TraceCalls(logfile)
     def MessageLog(self):
         Global.IO.MessageLog()
 
-    @TraceCalls(logfile)
     def OpenCloseDoor(self):
         "Open or close an adjacent door."
         adj = self.current_level.AdjacentSquares(self.x, self.y)
@@ -585,7 +558,6 @@ class PlayerCharacter(creatures.Humanoid):
                 else:
                     Global.IO.Message(lang.error_nothing_there_to_openclose)
 
-    @TraceCalls(logfile)
     def Pickup(self):
         "Pick up pyro_items(s) at the current position."
         pyro_items = self.current_level.ItemsAt(self.x, self.y)
@@ -617,7 +589,6 @@ class PlayerCharacter(creatures.Humanoid):
                     any_success = any_success or success
             return any_success
 
-    @TraceCalls(logfile)
     def Quaff(self):
         "Choose a potion and quaff it."
         potion = Global.IO.GetItemFromInventory(self, lang.prompt_quaff, types="!", notoggle=True)
@@ -627,7 +598,6 @@ class PlayerCharacter(creatures.Humanoid):
             except AttributeError:
                 Global.IO.Message(lang.error_cannot_drink_item % potion.name)
 
-    @TraceCalls(logfile)
     def Read(self):
         "Choose a scroll and read it."
         scroll = Global.IO.GetItemFromInventory(self, lang.prompt_read, types="?", notoggle=True)
@@ -637,30 +607,24 @@ class PlayerCharacter(creatures.Humanoid):
             except AttributeError:
                 Global.IO.Message(lang.error_cannot_read_item % scroll.name)
 
-    @TraceCalls(logfile)
     def TabTarget(self):
         Global.IO.TabTarget()
         self.tab_targeting = True
 
-    @TraceCalls(logfile)
     def TakeDamage(self, amount, type=None, source=None):
         self.hp -= amount
         return amount
 
-    @TraceCalls(logfile)
     def Throw(self):
         pass
 
-    @TraceCalls(logfile)
     def UnTarget(self):
         self.target = None
 
-    @TraceCalls(logfile)
     def SaveGame(self):
         Global.IO.Message(lang.saving_game.format(self.name + '.pkl'))
         Global.pyro.Save(self.name + '.pkl')
 
-    @TraceCalls(logfile)
     def Update(self):
         "Called each turn; get the player's action and execute it."
         self.UpdateEffects()
@@ -738,7 +702,6 @@ class PlayerCharacter(creatures.Humanoid):
             if not self.tab_targeting:
                 Global.IO.tab_targeting = False
 
-    @TraceCalls(logfile)
     def UseStairs(self, action):
         if self.free_motion:
             # Just find some stairs and use them:
@@ -761,7 +724,6 @@ class PlayerCharacter(creatures.Humanoid):
             raise ValueError
         Global.IO.Message(msg)
 
-    @TraceCalls(logfile)
     def Walk(self, dx, dy):
         "Try to move the specified amounts."
         px, py = self.x, self.y
@@ -792,7 +754,6 @@ class PlayerCharacter(creatures.Humanoid):
         else:
             return False
 
-    @TraceCalls(logfile)
     def Wear(self):
         "Let the player choose an item to equip."
         item = Global.IO.GetItemFromInventory(self, lang.prompt_wear, types='[="({|',
@@ -825,7 +786,6 @@ class PlayerCharacter(creatures.Humanoid):
                 self.Unequip(r)
         self.Equip(item)
 
-    @TraceCalls(logfile)
     def Unwear(self):
         "Let the player choose an item to unequip."
         item = Global.IO.GetItemFromInventory(self, lang.prompt_unwear, equipped=True, notoggle=True)
@@ -833,7 +793,6 @@ class PlayerCharacter(creatures.Humanoid):
             return False  # Cancelled
         self.Unequip(item)
 
-    @TraceCalls(logfile)
     def XPNeeded(self, level):
         "Return the xp needed to attain the given level."
         if level > 1:

@@ -57,7 +57,6 @@ class BoltSpell(Spell):
         return True
 
 
-    @TraceCalls(logfile)
     def Cast(self, caster):
         '''Cast a ball spell at a target.
 
@@ -283,7 +282,6 @@ class OtherEffectSpell(Spell):
         return True
 
 
-    @TraceCalls(logfile)
     def Cast(self, caster):
         '''Cast a ball spell at a target.
 

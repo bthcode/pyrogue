@@ -15,7 +15,6 @@ class Dungeon(object):
         self.name = name
         self.levels = dict()
 
-    @TraceCalls(logfile)
     def GetLevel(self, i):
         "Returns a Level object for the i'th level of this dungeon."
         try:
@@ -24,7 +23,6 @@ class Dungeon(object):
             self.levels[i] = self.NewLevel(i)
             return self.levels[i]
 
-    @TraceCalls(logfile)
     def NewLevel(self, i):
         "Generate the i'th level of the dungeon."
         L = Level(self, i)
@@ -54,7 +52,6 @@ class Level(object):
         self.AddFeature(dungeon_features.SmallFire(), x, y)
         self.fov = fov.FOVMap(self.width, self.height, self.BlocksVision)
 
-    @TraceCalls(logfile)
     def _add_doors(self):
         "Remove the door terrain and put door features in its place."
         for x in range(self.layout.level_width):
@@ -63,7 +60,6 @@ class Level(object):
                     self.layout.data[y][x] = FLOOR
                     self.AddFeature(dungeon_features.Door(), x, y)
 
-    @TraceCalls(logfile)
     def _add_stairs(self):
         "Add at least one up and one down staircase, not in the same room."
         self.up_room = choice(self.layout.rooms)
@@ -80,7 +76,6 @@ class Level(object):
         self.AddFeature(dungeon_features.Staircase("down"), i, j)
         self.stairs_down = (i, j)
 
-    @TraceCalls(logfile)
     def _add_mobs(self):
         "Add mobs to the level."
         # Add a random number of mobs to each room:
@@ -100,7 +95,6 @@ class Level(object):
                 else:
                     log("Mob bailout on level %s" % self.depth)
 
-    @TraceCalls(logfile)
     def AddCreature(self, mob, x, y):
         "Add a mob to the level at position x, y."
         # Make sure the space isn't already occupied by a mob:
@@ -115,7 +109,6 @@ class Level(object):
         self.mob_actions.sort(key=lambda m: m.timer)
         self.Dirty(x, y)
 
-    @TraceCalls(logfile)
     def AddFeature(self, feature, x, y):
         "Add a feature to the level at position x, y."
         assert not (x, y) in self.features  # Can't stack features.
@@ -123,7 +116,6 @@ class Level(object):
         feature.x, feature.y, feature.current_level = x, y, self
         self.Dirty(x, y)
 
-    @TraceCalls(logfile)
     def AddItem(self, item, x=None, y=None):
         "Add an item to the level at position x, y."
         if x is None or y is None:
@@ -146,7 +138,6 @@ class Level(object):
             item.x, item.y, item.current_level = x, y, self
             self.Dirty(x, y)
 
-    @TraceCalls(logfile)
     def PushItem(self, item, x, y):
         "Add the item at x, y, pushing existing item(s) out of the way."
         if not (x, y) in self.items:
@@ -163,7 +154,6 @@ class Level(object):
         # Something non-stackable is there; push it out of the way:
         self.invalid = [(x, y)]  # list of squares we can't displace to
 
-    @TraceCalls(logfile)
     def AdjacentSquares(self, x, y):
         "Return coordinates of the 8 adjacent squares to x, y."
         adj = []
@@ -175,11 +165,9 @@ class Level(object):
                     adj.append((i, j))
         return adj
 
-    @TraceCalls(logfile)
     def AllCreatures(self):
         return self.creatures.values()
 
-    @TraceCalls(logfile)
     def BlocksPassage(self, x, y):
         "Return whether the square at (x, y) blocks movement and firing."
         if not (0 <= x < self.layout.level_width and
@@ -196,7 +184,6 @@ class Level(object):
         if self.CreatureAt(x, y):
             return True
 
-    @TraceCalls(logfile)
     def BlocksVision(self, x, y):
         "Return whether the square at (x, y) blocks vision."
         if not (0 <= x < self.layout.level_width and
@@ -210,7 +197,6 @@ class Level(object):
             return True
         return False
 
-    @TraceCalls(logfile)
     def CreatureAt(self, x, y):
         "Return the creature at x, y, if any."
         try:
@@ -218,12 +204,10 @@ class Level(object):
         except KeyError:
             return None
 
-    @TraceCalls(logfile)
     def Dirty(self, x, y):
         "Mark the given square as needing to be repainted."
         self.dirty[(x, y)] = True
 
-    @TraceCalls(logfile)
     def Display(self, pov):
         "Display the level on screen."
         # Display the level:
@@ -241,7 +225,6 @@ class Level(object):
             log("Painted %s dungeon squares." % len(self.dirty))
         self.dirty = {}
 
-    @TraceCalls(logfile)
     def FeatureAt(self, x, y):
         "Return the feature at x, y, if any."
         try:
@@ -249,7 +232,6 @@ class Level(object):
         except KeyError:
             return None
 
-    @TraceCalls(logfile)
     def IsEmpty(self, x, y):
         "Return true if there is only empty floor at (x, y)."
         return (self.layout.data[y][x] == FLOOR
@@ -257,7 +239,6 @@ class Level(object):
                 and not self.CreatureAt(x, y)
                 and not self.ItemsAt(x, y))
 
-    @TraceCalls(logfile)
     def GetCoordsNear(self, x, y):
         r = 2
         while True:
@@ -271,7 +252,6 @@ class Level(object):
                         return i, j
             r += 1
 
-    @TraceCalls(logfile)
     def GetRandomPosNear(self, x, y, radius):
         attempts = 0
         r = radius
@@ -287,12 +267,10 @@ class Level(object):
             attempts += 1
         return None, None
 
-    @TraceCalls(logfile)
     def ItemsAt(self, x, y):
         "Return a list of pyro_items at x, y."
         return self.items.get((x, y), [])
 
-    @TraceCalls(logfile)
     def MoveCreature(self, mob, new_x, new_y):
         "Move the creature to the specified place within the level."
         # Make sure the destination isn't occupied by another mob:
@@ -309,7 +287,6 @@ class Level(object):
             mob.x, mob.y = new_x, new_y
             self.Dirty(mob.x, mob.y)
 
-    @TraceCalls(logfile)
     def PaintSquare(self, x, y):
         # Start with the floor tile:
         if self.layout.data[y][x] == WALL:
@@ -351,7 +328,6 @@ class Level(object):
             log("creature at: {0}".format(key))
             creature.Log()
 
-    @TraceCalls(logfile)
     def RandomSquare(self):
         "Return coords of a non-wall, non-feature, non-corridor square."
         # TODO: rewrite this so it won't lock if the level gets absolutely full
@@ -362,7 +338,6 @@ class Level(object):
             if not self.FeatureAt(x, y):
                 return x, y
 
-    @TraceCalls(logfile)
     def RemoveCreature(self, mob):
         "Remove the mob from the level."
         keys = [k for k in self.creatures if self.creatures[k] == mob]
@@ -375,7 +350,6 @@ class Level(object):
             pass
         mob.current_level = None
 
-    @TraceCalls(logfile)
     def RemoveItem(self, item):
         "Remove the item from the level."
         keys = [k for k in self.items if item in self.items[k]]
@@ -386,7 +360,6 @@ class Level(object):
             self.Dirty(item.x, item.y)
         item.x, item.y, item.current_level = None, None, None
 
-    @TraceCalls(logfile)
     def Update(self):
         "Execute a single game turn."
         # Pull off the first mob, update it, stick it back in, sort:
