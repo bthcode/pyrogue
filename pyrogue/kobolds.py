@@ -1,4 +1,6 @@
 from creature_base import *
+
+
 class small_kobold(Kobold):
     name = "small_kobold"
     tile = "k"
@@ -10,6 +12,8 @@ class small_kobold(Kobold):
     move_speed = 110
     desc = """It is a squat and ugly humanoid figure with a canine face."""
     attacks = [[pyro_items.Punch("1d5", 100), 1]]
+
+
 class kobold(Kobold):
     name = "kobold"
     tile = "k"
@@ -21,6 +25,8 @@ class kobold(Kobold):
     move_speed = 110
     desc = """It is a small, dog-headed humanoid."""
     attacks = [[pyro_items.Punch("1d8", 100), 1]]
+
+
 class kobold_shaman(Kobold):
     name = "kobold_shaman"
     tile = "k"
@@ -32,6 +38,8 @@ class kobold_shaman(Kobold):
     move_speed = 110
     desc = """It is a kobold dressed in skins and gesturing wildly."""
     attacks = [[pyro_items.Punch("1d8", 100), 1]]
+
+
 class kobold_archer(Kobold):
     name = "kobold_archer"
     tile = "k"
@@ -43,6 +51,8 @@ class kobold_archer(Kobold):
     move_speed = 110
     desc = """It is an ugly dog-headed humanoid wielding a bow."""
     attacks = [[pyro_items.Punch("1d9", 100), 1]]
+
+
 class large_kobold(Kobold):
     name = "large_kobold"
     tile = "k"
@@ -54,4 +64,10 @@ class large_kobold(Kobold):
     move_speed = 110
     desc = """It is a man-sized figure with the all too recognizable face of a kobold."""
     attacks = [[pyro_items.Punch("1d10", 100), 1]]
-all_kobolds = [small_kobold,kobold,kobold_shaman,kobold_archer,large_kobold,]
+
+
+all_kobolds = [small_kobold,
+               kobold,
+               kobold_shaman,
+               kobold_archer,
+               large_kobold]

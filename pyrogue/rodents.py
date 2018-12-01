@@ -1,5 +1,6 @@
 from creature_base import *
 
+
 class Rat(Rodent):
     name = lang.mob_name_rat
     color = c_yellow
@@ -11,6 +12,7 @@ class Rat(Rodent):
         [Bite("1d3", 100), 1],
     ]
     desc = lang.mob_desc_rat
+
 
 class GreaterRat(Rodent):
     name = lang.mob_name_greater_rat
@@ -24,4 +26,5 @@ class GreaterRat(Rodent):
     ]
     desc = lang.mob_desc_greater_rat
 
-all_rodents = [ Rat, GreaterRat ]
+
+all_rodents = [Rat, GreaterRat]

@@ -1,5 +1,6 @@
 from creature_base import *
 
+
 class scruffy_looking_hobbit(Humanoid):
     name = "scruffy_looking_hobbit"
     tile = "h"
@@ -11,6 +12,8 @@ class scruffy_looking_hobbit(Humanoid):
     move_speed = 110
     desc = """ An annoying little hobbit."""
     attacks = [[pyro_items.Punch("1d3", 80), 1]]
+
+
 class dark_elf(Humanoid):
     name = "dark_elf"
     tile = "h"
@@ -22,6 +25,8 @@ class dark_elf(Humanoid):
     move_speed = 110
     desc = """ twisted with evil."""
     attacks = [[pyro_items.Punch("2d6", 80), 1]]
+
+
 class dark_elven_mage(Humanoid):
     name = "dark_elven_mage"
     tile = "h"
@@ -33,6 +38,8 @@ class dark_elven_mage(Humanoid):
     move_speed = 120
     desc = """A dark elven figure, dressed all in black, hurling spells at you."""
     attacks = [[pyro_items.Punch("1d3", 80), 1]]
+
+
 class dark_elven_warrior(Humanoid):
     name = "dark_elven_warrior"
     tile = "h"
@@ -44,6 +51,8 @@ class dark_elven_warrior(Humanoid):
     move_speed = 110
     desc = """A dark elven figure in armour and ready with his sword."""
     attacks = [[pyro_items.Punch("1d3", 80), 1]]
+
+
 class gnome_mage(Humanoid):
     name = "gnome_mage"
     tile = "h"
@@ -55,6 +64,8 @@ class gnome_mage(Humanoid):
     move_speed = 110
     desc = """A mage of short stature."""
     attacks = [[pyro_items.Punch("1d3", 80), 1]]
+
+
 class dark_elven_priest(Humanoid):
     name = "dark_elven_priest"
     tile = "h"
@@ -66,6 +77,8 @@ class dark_elven_priest(Humanoid):
     move_speed = 120
     desc = """ deliver your soul to hell."""
     attacks = [[pyro_items.Punch("1d3", 80), 1]]
+
+
 class dark_elven_lord(Humanoid):
     name = "dark_elven_lord"
     tile = "h"
@@ -77,6 +90,8 @@ class dark_elven_lord(Humanoid):
     move_speed = 120
     desc = """A dark elven figure in armour and radiating evil power."""
     attacks = [[pyro_items.Punch("1d3", 80), 1]]
+
+
 class dark_elven_druid(Humanoid):
     name = "dark_elven_druid"
     tile = "h"
@@ -88,6 +103,8 @@ class dark_elven_druid(Humanoid):
     move_speed = 120
     desc = """A powerful dark elf, with mighty nature-controlling enchantments."""
     attacks = [[pyro_items.Punch("1d3", 80), 1]]
+
+
 class mind_flayer(Humanoid):
     name = "mind_flayer"
     tile = "h"
@@ -99,6 +116,8 @@ class mind_flayer(Humanoid):
     move_speed = 110
     desc = """  Claws reach out for you and you feel a presence invade your mind."""
     attacks = [[pyro_items.Punch("1d3", 80), 1]]
+
+
 class dark_elven_sorcerer(Humanoid):
     name = "dark_elven_sorcerer"
     tile = "h"
@@ -110,6 +129,8 @@ class dark_elven_sorcerer(Humanoid):
     move_speed = 130
     desc = """ his slender frame."""
     attacks = [[pyro_items.Punch("1d3", 80), 1]]
+
+
 class Ranger(Humanoid):
     name = "Ranger"
     tile = "h"
@@ -120,7 +141,10 @@ class Ranger(Humanoid):
     str, dex, int = 16, 18, 8
     move_speed = 100
     desc = """ Bad aragorns."""
-    attacks = [[pyro_items.Punch("1d3", 80), 1],[magic.MagicMissile(), 1] ]
+    attacks = [[pyro_items.Punch("1d3", 80), 1],
+               [magic.MagicMissile(), 1]]
+
+
 class Archer(Humanoid):
     name = "Archer"
     tile = "h"
@@ -132,6 +156,7 @@ class Archer(Humanoid):
     move_speed = 100
     desc = """ Bad aragorns."""
     attacks = []
+
     def __init__(self):
         Humanoid.__init__(self)
         bow = pyro_items.ShortBow()
@@ -141,4 +166,16 @@ class Archer(Humanoid):
         self.inventory.Pickup(arrow)
         self.Equip(arrow)
 
-all_humanoids = [scruffy_looking_hobbit,dark_elf,dark_elven_mage,dark_elven_warrior,gnome_mage,dark_elven_priest,dark_elven_lord,dark_elven_druid,mind_flayer,dark_elven_sorcerer,Ranger,Archer,]
+
+all_humanoids = [scruffy_looking_hobbit,
+                 dark_elf,
+                 dark_elven_mage,
+                 dark_elven_warrior,
+                 gnome_mage,
+                 dark_elven_priest,
+                 dark_elven_lord,
+                 dark_elven_druid,
+                 mind_flayer,
+                 dark_elven_sorcerer,
+                 Ranger,
+                 Archer]

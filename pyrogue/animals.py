@@ -1,5 +1,6 @@
 from creature_base import *
 
+
 class Wolf(Creature):
     name = lang.mob_name_wolf
     tile = "d"
@@ -11,4 +12,5 @@ class Wolf(Creature):
     move_speed = 110
     desc = lang.mob_desc_wolf
 
-all_animals = [ Wolf ]
+
+all_animals = [Wolf]
