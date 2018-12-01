@@ -1,4 +1,5 @@
-from creature_families import *
+from creature_base import *
+
 class scruffy_looking_hobbit(Humanoid):
     name = "scruffy_looking_hobbit"
     tile = "h"

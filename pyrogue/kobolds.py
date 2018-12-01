@@ -1,4 +1,4 @@
-from creature_families import *
+from creature_base import *
 class small_kobold(Kobold):
     name = "small_kobold"
     tile = "k"

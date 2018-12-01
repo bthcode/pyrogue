@@ -1,4 +1,4 @@
-from creature_families import *
+from creature_base import *
 
 class Wolf(Creature):
     name = lang.mob_name_wolf

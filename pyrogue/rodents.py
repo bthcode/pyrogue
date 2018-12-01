@@ -1,4 +1,4 @@
-from creature_families import *
+from creature_base import *
 
 class Rat(Rodent):
     name = lang.mob_name_rat
@@ -23,6 +23,5 @@ class GreaterRat(Rodent):
         [Bite("1d5", 100), 1],
     ]
     desc = lang.mob_desc_greater_rat
- 
 
 all_rodents = [ Rat, GreaterRat ]
