@@ -1,13 +1,11 @@
 import curses
 from curses import wrapper
 from curses import panel
+import logging
 
 from util import *
-
 import pyro_items
-
 import sys
-from functools import wraps
 
 # Check what OS we're running under; keycodes differ:
 WINDOWS = False
@@ -240,7 +238,7 @@ class IOWrapper(object):
             animation_delay()
             self.move(Global.pc.y, Global.pc.x)
             self.refresh()
-        for px, py in path: 
+        for px, py in path:
             Global.pc.current_level.PaintSquare(px, py)
             self.move(Global.pc.y, Global.pc.x)
             self.refresh()
@@ -339,7 +337,7 @@ class IOWrapper(object):
         b = pc.MeleeDamageBonus()
         if b >= 0:
             b = "+%s" % b
-        L.append("^Y^%s: %2s^0^  %s %s" % (lang.stat_abbr_str.upper(), 
+        L.append("^Y^%s: %2s^0^  %s %s" % (lang.stat_abbr_str.upper(),
                                            pc.stats("str"), b, lang.label_melee_damage))
         L.append("         %.2fs carried, %s: %2s" % (pc.inventory.TotalWeight(), lang.stat_abbr_estr, pc.eSTR()))
         L.append("")
@@ -356,8 +354,8 @@ class IOWrapper(object):
             limit = ""
         L.append("         %s %s%s" % (b, lang.word_evasion, limit))
         L.append("")
-        L.append("^Y^%s: %2s^0^  %s%% %s" % 
-                 (lang.stat_abbr_int.upper(), pc.stats("int"), 
+        L.append("^Y^%s: %2s^0^  %s%% %s" %
+                 (lang.stat_abbr_int.upper(), pc.stats("int"),
                   max(0, min(100, 25*(10-pc.stats("int")))), lang.label_spell_failure))
         L.append("         %s%% %s" % (max(0, min(100, 25*(8-pc.stats("int")))), lang.label_item_use_failure))
         L.append("")
@@ -366,9 +364,22 @@ class IOWrapper(object):
     def DetailedStats(self, pc):
         self.MsgWindow(self.GetDetailedStats(pc))
 
+    def DisplayEquipped(self, mob):
+        display = []
+        letters = "abcdefghijklmnopqrstuvwxyz01234567"
+
+        display_types = pyro_items.types
+        for type, symbol in display_types:
+            for i in mob.inventory.ItemsOfType(type):
+                if i[0] in mob.equipped:
+                    display.append([i[1], "{0}: {1}".format(type, i[0].name), i[0].desc])
+
+        display.sort(key = lambda x: x[0])
+        ret = self.ChoiceWindow(title="Equipped", msg=display)
+
     def DisplayInventory(self, mob, norefresh=False, equipped=False, types=""):
         "Display inventory."
-        # TODO: remove norefresh
+        lines = []
         self.ClearScreen()
         y = 0
         if equipped:
@@ -407,7 +418,7 @@ class IOWrapper(object):
                         qtystr = "%sx " % i.quantity
                     else:
                         qtystr = ""
-                    self.addstr_color(y, 4, "^Y^%s^0^: %s%s" % 
+                    self.addstr_color(y, 4, "^Y^%s^0^: %s%s" %
                                              (letter, qtystr, i.Name()), self.stdscr, lattr)
                     y += 1
         return y
@@ -544,7 +555,7 @@ class IOWrapper(object):
                 cmd.type = 'x'
                 break
             elif chr(k) == 't':
-                target, (path, blocked) = self.GetTarget(target_range = target_range) 
+                target, (path, blocked) = self.GetTarget(target_range = target_range)
                 if target:
                     cmd.type = 't'
                     cmd.target = target
@@ -562,7 +573,7 @@ class IOWrapper(object):
         hattr, lattr, sattr = c_Yellow, c_yellow, c_White
         need_refresh = True
         while True:
-            if mob.inventory.Num() == 0: 
+            if mob.inventory.Num() == 0:
                 y = self.DisplayInventory(mob, norefresh=True)
                 self.addstr(y, 0, lang.prompt_any_key, self.stdscr, hattr)
                 item = None
@@ -671,42 +682,23 @@ class IOWrapper(object):
 
     def GetSpell(self):
         "Ask the player to choose a spell."
-        self.clearline(0, self.stdscr)
         spells = Global.pc.spells
         if not spells:
             self.Message(lang.error_no_spells_known)
             return None
-        prompt = lang.prompt_choose_spell
-        plen = clen(prompt)
-        self.addstr_color(0, 0, prompt, self.stdscr)
-        shortcut, spell = "", None
-        while len(shortcut) < 3:
-            k = chr(self.GetKey()).lower()
-            if k in "abcdefghijklmnopqrstuvwxyz0123456789":
-                shortcut += k
-                self.addstr(0, plen + 1, shortcut.ljust(5), self.stdscr, c_Yellow)
-                self.move(0, plen + len(shortcut) + 1)
-            elif k == ' ':
-                self.clearline(0, self.stdscr)
-                return None
-            elif k in (chr(10), chr(13)):
-                shortcut = Global.pc.last_spell
-            elif k == '?':
-                # Give the player a menu:
-                all_spells = ["[%s] %s" % (s.shortcut, s.Name()) for s in spells]
-                r = self.Menu(items=all_spells, doublewide=True, extra_opts = " ",
-                              question = lang.prompt_choose_spell2)
-                if r == " ":
-                    return None
-                else:
-                    shortcut = spells[letters.index(r)].shortcut
-        self.clearline(0, self.stdscr)
-        try:
-            spell = [s for s in spells if s.shortcut == shortcut][0]
-        except IndexError:
-            self.Message(lang.error_bad_spell_shortcut)
-        Global.pc.last_spell = shortcut
-        return spell
+        title = lang.prompt_choose_spell
+        choices = []
+        letters = "abcdefghijklmnopqrstuvwxyz0123456789"
+        for idx, spell in enumerate(spells):
+            choices.append([letters[idx],
+                            spell.name,
+                            spell.desc])
+        ret = self.ChoiceWindow(title=title,
+                                msg=choices)
+        if ret is not None:
+            ret = spells[ret]
+        logging.debug("Spell: {0}".format(ret))
+        return ret
 
     def GetString(self, prompt, x=0, y=0, pattr=c_yellow, iattr=c_yellow,
                   max_length=999, noblank=False, nostrip=False, mask=None):
@@ -764,12 +756,14 @@ class IOWrapper(object):
                 for i, j in path:
                     Global.pc.current_level.PaintSquare(i, j)
                 path, clear = linear_path(Global.pc.x, Global.pc.y, x, y, Global.pc.current_level.BlocksPassage)
-                if clear: color = c_green
-                else: color = c_red
+                if clear:
+                    color = c_green
+                else:
+                    color = c_red
                 if not Global.pc.current_level.fov.Lit(x, y):
                     path = []
                 for i, j in path[1:]:
-                    self.PutChar(j, i, "*", color) 
+                    self.PutChar(j, i, "*", color)
                 if mob:
                     # Repaint the last square if a mob is there, so the target
                     # path doesn't obscure it:
@@ -900,7 +894,22 @@ class IOWrapper(object):
             self.addstr(0, 0, " " * self.width, self.stdscr)
             self.addstr(1, 0, " " * self.width, self.stdscr)
 
-    def MsgWindow(self, msg=[" Hello", " World"], center=False):
+    def MsgWindow(self, msg=["a", "b", "c", "d", "e", "f",
+                             "g", "h", "i", "j", "k", "l",
+                            "m", "n", "o", "p", "q", "r",
+                            "s", "t", "u", "v", "w", "x",
+                            "y", "z", "1", "2", "3", "4",
+                            "5", "6", "7", "8", "9", "10",
+                            "11", "12", "13", "14", "15"], center=False):
+        '''Popup Panel with text
+
+        params:
+            msg: list of strings - display one per line
+            center: boolean - if true, center the message
+
+        todo:
+            scrollability, multi-column, "Press any key"
+        '''
         win = self.game_win.derwin(0,0)
         win.keypad(1)
         p = panel.new_panel(win)
@@ -910,17 +919,182 @@ class IOWrapper(object):
         win.clear()
         win.box()
         x = 1
-        for idx, line in enumerate(msg):
-            if center:
-                x = self.game_width//2 - len(line)//2
-            self.addstr_color(idx+1, x, line, win, c_Yellow)
-        curses.doupdate()
-        key = win.getch()
-        win.clear()
+        max_height = self.game_height - 4
+        num_lines = len(msg)
+        start_idx = 0
+        end_idx = min(start_idx + max_height, max_height)
+        end_idx = min(end_idx, len(msg))
+
+        while True:
+            paint_idx = 1
+            for idx in range(start_idx, end_idx):
+                line = msg[idx]
+                self.addstr_color(paint_idx, x, line, win, c_Yellow)
+                paint_idx += 1
+            self.addstr_color(self.game_height-2, 2, "[SP] forward [B] back", win, c_Green)
+            curses.doupdate()
+            key = win.getch()
+            if key == 0x20:
+                start_idx += max_height
+                end_idx = start_idx + max_height
+                if end_idx > len(msg):
+                    end_idx = len(msg)
+                    start_idx = max(0, end_idx - max_height)
+            elif key == ord('b'):
+                start_idx = max(0, start_idx - max_height)
+                end_idx = min(start_idx + max_height, max_height)
+                end_idx = min(end_idx, len(msg))
+            else:
+                break
+            win.clear()
         p.hide()
         panel.update_panels()
         curses.doupdate()
         return key
+
+    def ChoiceWindow(self,
+                     title="Menu",
+                     msg=[["H", "Hello This is a very long option consisting of lots of words", "Description of Hello"],
+                          ["W", "World", "Description of World, which is quite a lot of text.\nIt should wrap around as a test."],
+                          ["A", "A", "A"],
+                          ["B", "B", "B"],
+                          ["C", "C", "C"],
+                          ["D", "D", "D"],
+                          ["E", "E", "E"],
+                          ["F", "F", "F"],
+                          ["G", "G", "G"],
+                          ["H", "H", "H"],
+                          ["I", "I", "I"],
+                          ["J", "J", "J"],
+                          ["K", "K", "K"],
+                          ["L", "L", "L"],
+                          ["M", "M", "M"],
+                          ["N", "N", "N"],
+                          ["O", "O", "O"],
+                          ["P", "P", "P"],
+                          ["Q", "Q", "Q"],
+                          ["R", "R", "R"],
+                          ["S", "S", "S"],
+                          ["T", "T", "T"],
+                          ["U", "U", "U"],
+                          ["V", "V", "V"],
+                          ["W", "W", "W"],
+                          ["X", "X", "X"],
+                          ["Y", "Y", "Y"],
+                          ["Z", "Z", "Z"],
+                          ["1", "1", "1"],
+                          ["2", "2", "2"],
+                          ["3", "3", "3"],
+                          ["4", "4", "4"],
+                          ["5", "5", "5"],
+                          ["6", "6", "6"],
+                          ["7", "7", "7"],
+                          ["9", "9", "9"],
+                          ["1", "10", "10"],
+                          ["1", "11", "11"],
+                          ["1", "12", "12"],
+                          ["1", "13", "13"],
+                          ["1", "14", "14"]]):
+        ''' Popup Panel with List of Choices
+
+        params:
+            msg: list of lists, each containing [ char/shortcut, string ]
+
+        todo:
+            handle msg list too long, multi-columns, etc.
+
+        win: list, up/down highlights, half-width
+        win2: description
+        '''
+
+        win = self.game_win.derwin(0,0)
+        win.keypad(1)
+
+        p = panel.new_panel(win)
+        panel.update_panels()
+        p.top()
+        p.show()
+        win.clear()
+        win.box()
+        x = 1
+        choice = 0
+        valid_keys = [ord(x[0]) for x in msg]
+
+        items_to_show = 20
+
+        # Draw menu down the left and description on the selected item 
+        # on the right half
+        while True:
+
+            # find the address that it in the window
+            first_idx = choice
+            last_idx  = first_idx + items_to_show
+            if last_idx > len(msg) - 1:
+                last_idx = len(msg)
+                first_idx = max(0, last_idx - items_to_show)
+
+            win.clear()
+            win.addstr(1, 2, title, curses.A_STANDOUT)
+            screen_help = "[ESC] : Exit, [SP] : Pg Down, [UP/DOWN] Scroll, [RET] Select [LETTER] Select"
+            self.addstr_color(self.game_height-4, 2, screen_help, win, c_Yellow)
+
+            draw_idx = 3
+            for idx in range(first_idx,last_idx):
+                line = msg[idx]
+                color = c_Yellow
+                if idx == choice:
+                    color = c_Green
+
+                    # draw the description text if selected
+                    descr_text = wrap(line[2], self.game_width//2 - 2)
+                    desc_idx = 3
+                    for d in descr_text:
+                        self.addstr_color(desc_idx, self.game_width//2, d, win, c_Green)
+                        desc_idx += 1
+                text = wrap(line[1], self.game_width//2 - 6)
+                self.addstr_color(draw_idx, x, "[{0}] {1}".format(line[0], text[0]), win, color)
+                draw_idx +=1
+                for lindex, l in enumerate(text[1:]):
+                    self.addstr_color(draw_idx, x, "    {0}".format(l), win, color)
+                    draw_idx+=1
+                retval = None
+            win.refresh()
+            key = win.getch()
+            # Test for space, esc
+            logging.debug("key={0}".format(key))
+            ret = None
+            if key in [0x1b]: # ESC exits
+                break
+            if key == 0x20:
+                choice = min(len(msg)-1, choice+items_to_show)
+            if key == curses.KEY_DOWN:
+                choice += 1
+                if choice > len(msg):
+                    choice = 0
+            elif key == curses.KEY_UP:
+                choice -= 1
+                if choice < 0:
+                    choice = len(msg) - 1
+            elif key in valid_keys:
+                ret = chr(key)
+                break
+            elif key in [ curses.KEY_ENTER, 10 ]:
+                ret = msg[choice][0]
+                break
+            else:
+                pass
+        # FInd the corresponding row index
+        if ret is not None:
+            for idx, line in enumerate(msg):
+                if line[0] == ret:
+                    ret = idx
+                    break
+        win.clear()
+        p.hide()
+        panel.update_panels()
+        curses.doupdate()
+        return ret
+
 
     def NearbyMobCycler(self, target_range=None):
         "Return a Cycler instance for mobs near the PC."
@@ -966,10 +1140,10 @@ class IOWrapper(object):
             mp_col = "^M^"
         else:
             mp_col = "^B^"
-        stats = ("%s:%s(%s) %s:%s %s:%s %s:%s" % 
-                 (lang.word_level_abbr.title(), p.level, exp_to_go, 
-                  lang.stat_abbr_str.title(), p.stats("str"), 
-                  lang.stat_abbr_dex.title(), p.stats("dex"), 
+        stats = ("%s:%s(%s) %s:%s %s:%s %s:%s" %
+                 (lang.word_level_abbr.title(), p.level, exp_to_go,
+                  lang.stat_abbr_str.title(), p.stats("str"),
+                  lang.stat_abbr_dex.title(), p.stats("dex"),
                   lang.stat_abbr_int.title(), p.stats("int")))
         hp = "%s%s:%s/%s^0^" % (hp_col, lang.word_hitpoints_abbr.upper(), p.hp, p.hp_max)
         if p.mp_max + p.mp > 0:
@@ -980,7 +1154,7 @@ class IOWrapper(object):
             ecolor = "^R^"
         else:
             ecolor = "^0^"
-        armor = "%s:%s %s%s:%s^0^" % (lang.word_protection_abbr.title(), p.ProtectionBonus(), ecolor, 
+        armor = "%s:%s %s%s:%s^0^" % (lang.word_protection_abbr.title(), p.ProtectionBonus(), ecolor,
                                       lang.word_evasion_abbr.title(), p.EvasionBonus())
         dlvl = "%s:%s" % (lang.word_dungeonlevel_abbr, p.current_level.depth)
         line = "%s  %s%s  %s  %s" % (stats, hp, mp, armor, dlvl)
@@ -1027,7 +1201,7 @@ class IOWrapper(object):
         "Ask the player a yes or no question."
         self.MorePrompt()
         self.addstr(0, 0, " " * self.width, self.stdscr)
-        self.addstr(0, 0, "%s [%s/%s]: " % 
+        self.addstr(0, 0, "%s [%s/%s]: " %
                            (question, lang.word_yes_key, lang.word_no_key), self.stdscr, attr)
         yes_keys = lang.word_yes_key.upper() + lang.word_yes_key.lower()
         no_keys = lang.word_no_key.upper() + lang.word_no_key.lower()
@@ -1045,8 +1219,8 @@ class IOWrapper(object):
 
     def set_status(self, lines):
         for idx, line in enumerate(lines):
-            self.addstr_color(idx+1,1,' ' * len(line), self.status_win)
-            self.addstr_color(idx+1,1,line, self.status_win)
+            self.addstr_color(idx+1,1, ' ' * len(line), self.status_win)
+            self.addstr_color(idx+1,1, line, self.status_win)
         self.status_win.refresh()
 
     def addstr(self, y, x, s, win, attr=c_yellow):
@@ -1056,7 +1230,7 @@ class IOWrapper(object):
             y += 1
         return y - 1
 
-    def addstr_color(self, y, x, text, win,  attr=c_yellow):
+    def addstr_color(self, y, x, text, win,  attr=c_yellow, inverse=False):
         "addstr with embedded color code support."
         # Color codes are ^color^, for instance,
         # "This is ^R^red text^W^ and this is white."
