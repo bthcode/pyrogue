@@ -262,10 +262,10 @@ class IOWrapper(object):
         for pt in pts:
             self.PutChar(pt[1], pt[0], "*", color)
         self.PutChar(ty,tx, "*", c_Red)
-        animation_delay()     
-        self.pad.refresh(0, 0, 
-                        self.game_start_y, self.game_start_x,
-                        self.game_height, self.game_width)
+        animation_delay()
+        self.pad.refresh(0, 0,
+                         self.game_start_y, self.game_start_x,
+                         self.game_height, self.game_width)
 
         for pt in pts:
             Global.pc.current_level.PaintSquare(pt[0], pt[1])
