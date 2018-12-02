@@ -305,41 +305,34 @@ class IOWrapper(object):
     def CommandList(self, pc, lattr=c_yellow, hattr=c_Yellow):
         "Display the keyboard commands to the player."
         L = []
+        L.append(lang.label_help_title.center(self.game_width-1))
+        L.append("")
+        L.append(lang.label_keyboard_commands)
         L.append("^Y^" + lang.label_movement_keys)
-        L.append(" ^Y^7   8   9      y   k   u")
-        L.append(" ^y^  \ | /          \ | /")
-        L.append(" ^Y^4 ^y^- ^Y^5 ^y^- ^Y^6  ^y^%s  ^Y^h ^y^- ^Y^. ^y^- ^Y^l" % lang.word_or)
+        L.append(" ^g^7   8   9      y   k   u")
+        L.append(" ^g^  \ | /          \ | /")
+        L.append(" ^g^4 ^y^- ^g^5 ^y^- ^g^6  ^g^%s  ^G^h ^y^- ^G^. ^y^- ^G^l" % lang.word_or)
         L.append(" ^y^  / | \          / | \ ")
-        L.append("^Y^ 1   2   3      b   j   n")
-        L.append("^Y^5 ^y^%s ^Y^.^y^ %s" % (lang.word_or, lang.label_rest_one_turn))
-        L.append(" ^Y^/^y^ %s" % lang.label_run)
-        y = 2
-        self.ClearScreen()
-        self.addstr(0, 0, lang.label_help_title.center(self.width-1), self.stdscr,hattr)
-        self.addstr(1, 5, lang.label_keyboard_commands, self.stdscr,hattr)
+        L.append("^G^ 1   2   3      b   j   n")
+        L.append("^G^5 ^y^ %s" % (lang.label_rest_one_turn))
+        L.append(" ^G^.^y^ %s" % lang.label_run)
+        L.append("")
+
+
         special = {9: lang.key_tab}
         for c in pc.commands:
             keys = []
             for k in c.keys:
                 try: keys.append(special[k])
                 except KeyError: keys.append(chr(k))
-            ckeys = (" ^0^%s^Y^ " % lang.word_or).join(keys)
-            cstr = "^Y^%6s^y^ - %s" % (ckeys, c.desc[:32])
-            if y < 22:
-                self.addstr_color(y, 0, cstr, self.stdscr)
-            else:
-                self.addstr_color(11 + y - 22, 40, cstr, self.stdscr)
-            y += 1
-        for line in range(len(L)):
-            self.screen.addstr_color(line+1, 44, L[line], c_yellow)
-        self.addstr(self.height-1, 0, lang.prompt_any_key.center(self.width-1), self.stdscr,hattr)
-        self.GetKey()
-        self.ClearScreen()
-        return
+            ckeys = (" ^0^%s^G^ " % lang.word_or).join(keys)
+            cstr = "^G^%6s^y^ - ^y^%s" % (ckeys, c.desc[:32])
+            L.append(cstr)
+        self.MsgWindow(L)
 
-    def DetailedStats(self, pc):
+    def GetDetailedStats(self, pc):
         "Show a detailed player stats screen."
-        self.screen.clear()
+        #self.screen.clear()
         L = []
         L.append(("^Y^-= %s =-" % lang.label_char_title) % (pc.name, pc.level, pc.archetype.cname))
         L.append("")
@@ -368,13 +361,10 @@ class IOWrapper(object):
                   max(0, min(100, 25*(10-pc.stats("int")))), lang.label_spell_failure))
         L.append("         %s%% %s" % (max(0, min(100, 25*(8-pc.stats("int")))), lang.label_item_use_failure))
         L.append("")
-        y = 0
-        for line in L:
-            self.addstr_color(y, 0, line, c_yellow, self.stdscr)
-            y += 1
-        self.addstr_color(y+1, 0, "^Y^%s" % lang.prompt_any_key, self.stdscr)
-        self.GetKey()
-        self.screen.clear()
+        return L
+
+    def DetailedStats(self, pc):
+        self.MsgWindow(self.GetDetailedStats(pc))
 
     def DisplayInventory(self, mob, norefresh=False, equipped=False, types=""):
         "Display inventory."
@@ -909,6 +899,28 @@ class IOWrapper(object):
             self.messages_displayed = 0
             self.addstr(0, 0, " " * self.width, self.stdscr)
             self.addstr(1, 0, " " * self.width, self.stdscr)
+
+    def MsgWindow(self, msg=[" Hello", " World"], center=False):
+        win = self.game_win.derwin(0,0)
+        win.keypad(1)
+        p = panel.new_panel(win)
+        panel.update_panels()
+        p.top()
+        p.show()
+        win.clear()
+        win.box()
+        x = 1
+        for idx, line in enumerate(msg):
+            if center:
+                x = self.game_width//2 - len(line)//2
+            self.addstr_color(idx+1, x, line, win, c_Yellow)
+        curses.doupdate()
+        key = win.getch()
+        win.clear()
+        p.hide()
+        panel.update_panels()
+        curses.doupdate()
+        return key
 
     def NearbyMobCycler(self, target_range=None):
         "Return a Cycler instance for mobs near the PC."

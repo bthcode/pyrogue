@@ -301,8 +301,9 @@ class PlayerCharacter(creatures.Humanoid):
                 self.hp = self.hp_max
                 Global.IO.Message("You refuse to die!")
                 return
-        # PC has died; game is over:
-        Global.IO.Message(lang.msg_you_die, forcewait=True)
+        s = Global.IO.GetDetailedStats(self)
+        t = [ "^R^ You Have Died", ""] + s
+        Global.IO.MsgWindow(msg=t)
         raise GameOver
 
     def DropItem(self):
@@ -691,6 +692,8 @@ class PlayerCharacter(creatures.Humanoid):
                 # Movement key:
                 dx, dy = offsets[k-49]
                 self.Walk(dx, dy)
+            elif k == ord('m'):
+                Global.IO.MsgWindow()
             elif chr(k) in vi_offsets:
                 dx, dy = vi_offsets[chr(k)]
                 self.Walk(dx, dy)
