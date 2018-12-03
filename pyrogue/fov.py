@@ -1,19 +1,20 @@
 "fov.py - Field-of-view calculation for Pyro."
 
 from util import *
-#object = object
 from math import sqrt
+
 
 class FOVMap(object):
     # Multipliers for transforming coordinates to other octants:
     # X, Y = x * xx + y * xy, x * yx + y * yy
     # Octants: 0=NNW, 1=WNW, 2=ENE, 3=NNE, 4=SSE, 5=ESE, 6=WSW, 7=SSW
     mult = [
-                [1,  0,  0, -1, -1,  0,  0,  1],
-                [0,  1, -1,  0,  0, -1,  1,  0],
-                [0,  1,  1,  0,  0, -1, -1,  0],
-                [1,  0,  0,  1, -1,  0,  0, -1]
-            ]
+        [1,  0,  0, -1, -1,  0,  0,  1],
+        [0,  1, -1,  0,  0, -1,  1,  0],
+        [0,  1,  1,  0,  0, -1, -1,  0],
+        [1,  0,  0,  1, -1,  0,  0, -1]
+    ]
+
     def __init__(self, width, height, blocked_function):
         # map should be a list of strings, one string per row of the map.
         self.Blocked = blocked_function
@@ -27,6 +28,7 @@ class FOVMap(object):
                 l_slope = (i+0.5) / (j-0.5)
                 r_slope = (i-0.5) / (j+0.5)
                 self.slopes[j].append((l_slope, r_slope))
+
     def Ball(self, x, y, radius, ignore_walls=False):
         radius_squared = (radius + 0.5) ** 2
         if ignore_walls:
@@ -40,6 +42,7 @@ class FOVMap(object):
             return f.keys()
         else:
             return self.FOVList(x, y, radius)
+
     def cast_fov(self, cx, cy, row, start, end, radius, xx, xy, yx, yy):
         "Lightcasting function for a single octant."
         casts = ((row, start, end), None)
@@ -81,28 +84,31 @@ class FOVMap(object):
                             new_start = l_slope
                             continue
                         else:
-                            # Reached the end of the run of blocked squares; 
+                            # Reached the end of the run of blocked squares;
                             # Set our new start point here:
                             start = new_start
                             blocked = False
                 # Row is scanned; do next row unless last square was blocked:
                 if blocked:
-                    break        
+                    break
+
     def FOVList(self, x, y, radius):
         "Return a list of squares that are in view from (x, y) within the given radius."
         self.fov_list = {}
         self.fov_list[(x, y)] = True
         for oct in range(8):
-            self.cast_fov(x, y, 1, 0.0, 1.0, radius, 
+            self.cast_fov(x, y, 1, 0.0, 1.0, radius,
                           self.mult[0][oct], self.mult[1][oct],
                           self.mult[2][oct], self.mult[3][oct])
         return self.fov_list.keys()
+
     def GetOctant(self, dx, dy):
         "Return which octant the given offset lies in."
         # Octants: 0=NNW, 1=WNW, 2=ENE, 3=NNE, 4=SSE, 5=ESE, 6=WSW, 7=SSW
         if dx == dy == 0:
             return None
-        vert = abs(dx) <= abs(dy)  # Whether the offset is more vertical than horizontal
+        # Whether the offset is more vertical than horizontal
+        vert = abs(dx) <= abs(dy)
         if dx <= 0:
             # Left half:
             if dy <= 0:
@@ -132,8 +138,10 @@ class FOVMap(object):
                 else:
                     oct = 5
         return oct
+
     def Lit(self, x, y):
-        return (x,y) in self.lit_now
+        return (x, y) in self.lit_now
+
     def LOSExists(self, x1, y1, x2, y2):
         "Return whether a line of sight exists between (x1, y1) and (x2, y2)."
         # We'll do this by doing the normal light casting, centered at (x1, y1),
@@ -144,11 +152,11 @@ class FOVMap(object):
             return True
         oct = self.GetOctant(dx, dy)
         self.fov_list = {}
-        self.cast_fov(x1, y1, 1, 1.0, 0.0, distance, 
+        self.cast_fov(x1, y1, 1, 1.0, 0.0, distance,
                       self.mult[0][oct], self.mult[1][oct],
                       self.mult[2][oct], self.mult[3][oct])
-        return self.fov_list.has_key((x2, y2))
-        
+        return (x2,y2) in self.fov_list
+
     def SetLit(self, x, y=None):
         if y is None:
             # Single-parameter call is a list:
@@ -156,5 +164,6 @@ class FOVMap(object):
                 self.lit_now[(i, j)] = True
         else:
             self.lit_now[(x, y)] = True
+
     def UnlightAll(self):
         self.lit_now = {}
