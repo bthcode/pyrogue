@@ -8,9 +8,13 @@ from time import sleep
 from strings import lang
 from functools import reduce
 
-class GameOver(Exception): pass
+
+class GameOver(Exception):
+    pass
 
 ############################## GLOBALS ##########################
+
+
 class Global(object):
     KeyBuffer = ""
     FullDungeonRefresh = True
@@ -18,6 +22,7 @@ class Global(object):
     pc = None
 
 ############################ CONSTANTS ##########################
+
 
 letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 ANIMATION_DELAY = 0    # Sleep time in seconds between animation frames
@@ -101,27 +106,28 @@ k_left = 52
 k_upleft = 55
 k_center = 53
 
-offsets = ((-1, 1), (0, 1), (1, 1), (-1 ,0),(0, 0),
+offsets = ((-1, 1), (0, 1), (1, 1), (-1, 0), (0, 0),
            (1, 0), (-1, -1), (0, -1), (1, -1))
 
 vi_offsets = {
-    'h' : (-1, 0),
-    'l' : ( 1, 0),
-    'j' : ( 0, 1),
-    'k' : ( 0,-1),
-    'y' : (-1,-1),
-    'u' : ( 1,-1),
-    'b' : (-1, 1),
-    'n' : ( 1, 1),
-    '.' : ( 0, 0),
+    'h': (-1, 0),
+    'l': (1, 0),
+    'j': (0, 1),
+    'k': (0, -1),
+    'y': (-1, -1),
+    'u': (1, -1),
+    'b': (-1, 1),
+    'n': (1, 1),
+    '.': (0, 0),
 }
 
 arrow_offsets = {
-    curses.KEY_DOWN  : ( 0, 1),
-    curses.KEY_RIGHT : ( 1, 0),
-    curses.KEY_LEFT  : (-1, 0),
-    curses.KEY_UP    : ( 0, -1),
+    curses.KEY_DOWN: (0, 1),
+    curses.KEY_RIGHT: (1, 0),
+    curses.KEY_LEFT: (-1, 0),
+    curses.KEY_UP: (0, -1),
 }
+
 
 class Cycler(object):
     def __init__(self, iterable):
@@ -131,12 +137,15 @@ class Cycler(object):
             raise TypeError
         self.iterable = iterable
         self.index = -1  # So first call to next() returns iterable[0]
+
     def next(self):
         self.index = (self.index + 1) % len(self.iterable)
         return self.iterable[self.index]
+
     def prev(self):
         self.index = (self.index - 1) % len(self.iterable)
         return self.iterable[self.index]
+
 
 def d(p1, p2=None):
     "Roll dice"
@@ -162,9 +171,11 @@ def d(p1, p2=None):
         roll += irand(1, kind)
     return roll + mod
 
+
 def seen(mob):
     "Return whether the mob is seen by the PC"
     return mob.is_pc or mob.pc_can_see
+
 
 def delay(speed):
     "Return the delay for a given speed."
@@ -172,6 +183,7 @@ def delay(speed):
     # 200 is twice as fast, 500 delay.
     # 50 is twice as slow, 2000 delay.
     return int(1000 * (100.0 / speed))
+
 
 def irand(a, b, n=1):
     if a > b:
@@ -181,14 +193,17 @@ def irand(a, b, n=1):
         t += randint(a, b)
     return int(round(t / n))
 
+
 try:
     sum([])
 except NameError:
     from operator import add
+
     def sum(data):
         if len(data) == 0:
             return 0
         return reduce(add, data)
+
 
 def wrap(text, width):
     """
@@ -202,11 +217,12 @@ def wrap(text, width):
     return reduce(lambda line, word, width=width: '%s%s%s' %
                   (line,
                    ' \n'[(len(line)-line.rfind('\n')-1
-                         + len(word.split('\n',1)[0]
-                              ) >= width)],
+                          + len(word.split('\n', 1)[0]
+                                ) >= width)],
                    word),
                   text.split(' ')
-                 ).split('\n')
+                  ).split('\n')
+
 
 def weighted_choice(lst):
     """
@@ -220,6 +236,7 @@ def weighted_choice(lst):
         n -= weight
     return item
 
+
 def adjacent(a, b):
     """
     Return whether a is 8-way adjacent to b.  a and b need to have 
@@ -227,9 +244,11 @@ def adjacent(a, b):
     """
     return abs(a.x - b.x) < 2 and abs(a.y - b.y) < 2
 
+
 def quantize(r):
     "Quantize a real number.  Returns int(r), and adds 1 if rnd(0, 1) < frac(r)."
     return int(r + rnd(0, 1))
+
 
 def int_range(mean, std_dev=None, max_std_dev=2):
     "Return an random integer normally distributed around mean, with the given std dev."
@@ -238,12 +257,13 @@ def int_range(mean, std_dev=None, max_std_dev=2):
     mean += 0.5
     return int(min(mean+std_dev*max_std_dev, max(norm(mean, std_dev), mean-std_dev*max_std_dev)))
 
+
 def hit_chance(differential, level=1):
     "Return the chance to hit a target."
     # differential is attacker's to-hit bonus minus defender's evade bonus
     # level is the target's level; bonuses are diminished in effectiveness with higher levels
     # decay controls how fast the effectiveness of a hit/evade differential diminishes
-    # with level.  
+    # with level.
     # 0.933 = 1/2 at 10 and 1/4 at 20
     # 0.966 = 71% at 10, 1/2 at 20
     decay = 0.933
@@ -253,14 +273,17 @@ def hit_chance(differential, level=1):
     else:
         return 0.5 - mod
 
+
 def successful_hit(differential, level=1):
     return rnd(0, 1) < hit_chance(differential, level)
+
 
 def clen(s):
     "Return the length of a string, excluding embedded color codes."
     for c in list(msg_colors.keys()) + ["0"]:
         s = s.replace("^"+c+"^", "")
     return len(s)
+
 
 def bresenham(x1, y1, x2, y2, initial_error=0):
     "Bresenham's famous algorithm."
@@ -276,11 +299,15 @@ def bresenham(x1, y1, x2, y2, initial_error=0):
     dx, dy = x2 - x1, abs(y2 - y1)
     error, derror = initial_error, float(dy) / dx
     y = y1
-    if y1 < y2: ystep = 1
-    else: ystep = -1
+    if y1 < y2:
+        ystep = 1
+    else:
+        ystep = -1
     for x in range(x1, x2+1):
-        if steep: path.append((y, x))
-        else: path.append((x, y))
+        if steep:
+            path.append((y, x))
+        else:
+            path.append((x, y))
         error += derror
         if error > 0.5:
             y += ystep
@@ -289,10 +316,13 @@ def bresenham(x1, y1, x2, y2, initial_error=0):
         path.reverse()
     return path
 
+
 def path_clear(path, blocked):
     for x, y in path:
-        if blocked(x, y): return False
+        if blocked(x, y):
+            return False
     return True
+
 
 def calc_distance(x1, y1, x2, y2):
     '''Calculate simple hypotenuse
@@ -306,6 +336,7 @@ def calc_distance(x1, y1, x2, y2):
     '''
     h = math.sqrt((x1-x2)**2 + (y1-y2)**2)
     return int(round(h))
+
 
 def linear_path(x1, y1, x2, y2, blocked):
     "Return a list of (x, y) tuples along a line from (x1, y1) to (x2, y2)."
@@ -362,17 +393,20 @@ def linear_path(x1, y1, x2, y2, blocked):
         # Return the pretty path.
         return pretty_path, False
 
+
 def range_direction_path(x, y, target_range, direction, blocked):
     '''Calculate the linear path in a given direction'''
     # 1. For direction, calculate destination x and y
-    x_end   = x + target_range * direction[0]
-    y_end   = y + target_range * direction[1]
-    path, blocked = linear_path(x,y, x_end,y_end, blocked)
+    x_end = x + target_range * direction[0]
+    y_end = y + target_range * direction[1]
+    path, blocked = linear_path(x, y, x_end, y_end, blocked)
     return path, blocked
+
 
 def animation_delay():
     if ANIMATION_DELAY:
         sleep(ANIMATION_DELAY)
+
 
 def bonus_str(bonus):
     "Return -1, +0, +1, etc. from a given bonus."
@@ -381,49 +415,53 @@ def bonus_str(bonus):
     else:
         return "+%s" % bonus
 
+
 def report_combat_hit(attacker, target, damage_taken,
                       verbs=["hits", "hits", "hits"],
                       verbs_sp=["hit", "hit", "hit"]):
     "Display a text message about a successful attack."
-    if not seen(attacker) and not seen(target): return
+    if not seen(attacker) and not seen(target):
+        return
     if damage_taken > 0:
         if attacker.is_pc:
             Global.IO.Message(lang.combat_you_hit % (verbs_sp[1],
-                lang.ArticleName("the", target), damage_taken))
+                                                     lang.ArticleName("the", target), damage_taken))
             if target.dead:
                 Global.IO.Message(lang.combat_you_killed %
-                                  (lang.ArticleName("the", target),target.kill_xp))
+                                  (lang.ArticleName("the", target), target.kill_xp))
         elif target.is_pc:
             Global.IO.Message(lang.combat_mob_hit_you %
                               (lang.ArticleName("The", attacker), verbs[1], damage_taken))
         else:
             Global.IO.Message(lang.combat_mob_hit_mob % (lang.ArticleName("The", attacker),
-                verbs[1], lang.ArticleName("the", target)))
+                                                         verbs[1], lang.ArticleName("the", target)))
     elif damage_taken == 0:
         if attacker.is_pc:
             Global.IO.Message(lang.combat_you_hit_no_damage % (verbs_sp[0],
-                lang.ArticleName("the", target)))
+                                                               lang.ArticleName("the", target)))
         elif target.is_pc:
             Global.IO.Message((lang.combat_mob_hit_you_no_damage %
-                   (lang.ArticleName("The", attacker), verbs[0])))
+                               (lang.ArticleName("The", attacker), verbs[0])))
         else:
             Global.IO.Message(lang.combat_mob_hit_mob % (lang.ArticleName("The", attacker),
-                verbs[0], lang.ArticleName("the", target)))
+                                                         verbs[0], lang.ArticleName("the", target)))
     if target.is_pc:
         Global.IO.ShowStatus()
     return True
 
+
 def report_combat_miss(attacker, target,
                        verbs=["hits", "hits", "hits"],
                        verbs_sp=["hit", "hit", "hit"]):
-    if not seen(attacker) and not seen(target): return
+    if not seen(attacker) and not seen(target):
+        return
     if attacker.is_pc:
         Global.IO.Message(lang.combat_you_miss % (verbs_sp[1],
-            lang.ArticleName("the", target)))
+                                                  lang.ArticleName("the", target)))
     elif target.is_pc:
         Global.IO.Message((lang.combat_mob_misses_you %
-               (lang.ArticleName("The", attacker), verbs_sp[1])))
+                           (lang.ArticleName("The", attacker), verbs_sp[1])))
     else:
         Global.IO.Message(lang.combat_mob_misses_mob % (lang.ArticleName("The", attacker),
-              verbs_sp[1], lang.ArticleName("the", target)))
+                                                        verbs_sp[1], lang.ArticleName("the", target)))
     return False
