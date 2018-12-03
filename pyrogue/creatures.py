@@ -9,11 +9,11 @@ from kobolds import *
 
 
 all_creatures = []
-all_creatures += all_rodents
-all_creatures += all_imps
-all_creatures += all_animals
+#all_creatures += all_rodents
+#all_creatures += all_imps
+#all_creatures += all_animals
 all_creatures += all_humanoids
-all_creatures += all_kobolds
+#all_creatures += all_kobolds
 
 
 def RandomMob(level):

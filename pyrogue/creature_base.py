@@ -114,7 +114,28 @@ class Berserker(AI):
 
 
 class Creature(object):
-    "An animate object."
+    """An animate object.
+
+    Attributes:
+        hp_max
+        hp
+        mp_max
+        mp
+        tile : for drawing
+        rarity
+        unique
+        vision_radius : distance creature can see
+        natural_armor : give ProtectionBonus
+        level : level in the dungeon
+        move_speed : speed
+        attack_speed : speed
+        cast_speed : speed
+        age : for regeneration
+        heal_timer : for regeneration
+        mana_timer : for regneration
+        x : current position
+        y : current position
+    """
     name = "Generic Creature"   # If this is seen in-game, it's a bug.
     hp_max = 10
     mp_max = 0
@@ -138,6 +159,13 @@ class Creature(object):
     is_pc = False
     can_see_pc = False
     pc_can_see = False
+
+    resists_fire = False
+    resists_ice = False
+    resists_electricity = False
+    immune_fire = False
+    immune_ice = False
+    immune_electricity = False
 
     def __init__(self):
         self.effects = []
@@ -277,7 +305,7 @@ class Creature(object):
 
     def Regenerate(self):
         "See if the creature heals any hp/mp."
-        if self.age >=  self.heal_timer:
+        if self.age >= self.heal_timer:
             turns = 30 - self.stats("str")
             self.heal_timer = self.age + 1000 * turns
             if self.hp < self.hp_max:
@@ -321,8 +349,46 @@ class Creature(object):
             return feature
         return None
 
-    def TakeDamage(self, amount, type = None, source=None):
+    def TakeDamage(self, amount, damage_type=None, source=None):
         # This method can be overridden for special behavior (fire heals elemental, etc)
+        #resists_fire = False
+        #resists_ice = False
+        #resists_electricity = False
+        #immune_fire = False
+        #immune_ice = False
+        #immune_electricty = False
+        msg = None
+        if damage_type == 'electricty':
+            if self.immune_electricity:
+                amount = 0
+                msg = "The {0} is unharmed".format(self.name)
+            elif self.resists_electricity:
+                amount -= amount // 2
+                msg = "The {0} resists".format(self.name)
+            else:
+                msg = "The {0} is shocked".format(self.name)
+        elif damage_type == 'ice':
+            if self.immune_ice:
+                amount = 0
+                msg = "The {0} is unharmed".format(self.name)
+            elif self.resists_ice:
+                amount -= amount // 2
+                msg = "The {0} resists".format(self.name)
+            else:
+                msg = "The {0} is frozen".format(self.name)
+        elif damage_type == 'fire':
+            if self.immune_fire:
+                amount = 0
+                msg = "The {0} is unharmed".format(self.name)
+            elif self.resists_fire:
+                amount -= amount // 2
+                msg = "The {0} resists".format(self.name)
+            else:
+                msg = "The {0} is burned".format(self.name)
+
+        if msg:
+            Global.IO.Message(msg)
+
         self.hp -=  amount
         # Check for death:
         if self.hp <=  0:
@@ -333,6 +399,7 @@ class Creature(object):
 
     def TakeEffect(self, new_effect, duration):
         "Apply a temporary or permanent effect to the creature."
+        # TODO - resistance framework
         if duration is None:
             new_effect.expiration = None
         else:
@@ -369,6 +436,7 @@ class Creature(object):
             return True
         except ValueError:
             return False
+
 
     def Update(self):
         assert not self.dead

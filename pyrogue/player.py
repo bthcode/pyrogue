@@ -43,16 +43,21 @@ class PlayerCharacter(creatures.Humanoid):
         self.name = Global.IO.GetString(lang.prompt_player_name, noblank=True,
                                         pattr=c_yellow, iattr=c_Yellow)
 
-        god = Global.IO.GetChoice([Krol, Dis], lang.prompt_player_god % self.name)
+        god = Global.IO.GetChoice(
+            [Krol, Dis], lang.prompt_player_god % self.name)
         rprompt = lang.prompt_player_race % self.name
         if god == Krol:
-            self.archetype = Global.IO.GetChoice([KrolDwarf, KrolElf, KrolHuman], rprompt)(self)
+            self.archetype = Global.IO.GetChoice(
+                [KrolDwarf, KrolElf, KrolHuman], rprompt)(self)
         elif god == Dis:
-            self.archetype = Global.IO.GetChoice([DisDwarf, DisElf, DisHuman], rprompt)(self)
+            self.archetype = Global.IO.GetChoice(
+                [DisDwarf, DisElf, DisHuman], rprompt)(self)
 
-        self.archetype.hp, self.archetype.mp = self.stats("str"), max(0, self.stats("int") - 7)
+        self.archetype.hp, self.archetype.mp = self.stats(
+            "str"), max(0, self.stats("int") - 7)
         self.hp_max, self.mp_max = self.archetype.hp, self.archetype.mp
-        self.gain_str, self.gain_dex, self.gain_int = 1, 1, 1   # number of gains needed to go up a notch
+        # number of gains needed to go up a notch
+        self.gain_str, self.gain_dex, self.gain_int = 1, 1, 1
         self.hp, self.mp = self.hp_max, self.mp_max
         self.move_speed = 100
         self.attack_speed = 100
@@ -82,7 +87,8 @@ class PlayerCharacter(creatures.Humanoid):
     def Attack(self, target):
         "Attack the given creature."
         try:
-            attack = self.ItemsInSlot(lang.equip_slot_meleeweapon)[0].melee_attack
+            attack = self.ItemsInSlot(lang.equip_slot_meleeweapon)[
+                0].melee_attack
         except IndexError:
             attack = self.unarmed
         success = attack.Attempt(self, target)
@@ -120,7 +126,8 @@ class PlayerCharacter(creatures.Humanoid):
                 mx, my = self.run_dx, self.run_dy
         else:
             adj = self.AdjacentPassableSquares()
-            adj = [s for s in adj if s not in self.ran and (s[0] == self.x or s[1] == self.y)]
+            adj = [s for s in adj if s not in self.ran and (
+                s[0] == self.x or s[1] == self.y)]
             if len(adj) == 1:
                 # Only one square we can move to other than the one we were just in:
                 mx, my = adj[0][0]-self.x, adj[0][1]-self.y
@@ -155,7 +162,8 @@ class PlayerCharacter(creatures.Humanoid):
         else:
             self.running = True
         self.run_dx, self.run_dy, self.run_count = dx, dy, 0
-        self.ran = [(self.x+x, self.y+y) for (x, y) in offsets if x == 0 or y == 0]
+        self.ran = [(self.x+x, self.y+y)
+                    for (x, y) in offsets if x == 0 or y == 0]
         try:
             self.ran.remove((self.x+dx, self.y+dy))
         except ValueError:
@@ -200,7 +208,8 @@ class PlayerCharacter(creatures.Humanoid):
             item_list = [x.__name__ for x in creatures.all_creatures]
             try:
                 x, y = self.current_level.GetCoordsNear(self.x, self.y)
-                Global.IO.Message("Creating a {0} at {1}, {2}".format(item, x, y))
+                Global.IO.Message(
+                    "Creating a {0} at {1}, {2}".format(item, x, y))
                 m = getattr(pyro_items, item)()
                 self.current_level.AddItem(m, x, y)
             except Exception as err:
@@ -214,7 +223,8 @@ class PlayerCharacter(creatures.Humanoid):
                         break
                 if self.current_level.IsEmpty(self.x+dx, self.y+dy):
                     lvl = int_range(15, 5, 2)
-                    self.current_level.AddItem(pyro_items.random_item(lvl), self.x+dx, self.y+dy)
+                    self.current_level.AddItem(
+                        pyro_items.random_item(lvl), self.x+dx, self.y+dy)
 
         def cheat_genocide():
             for c in self.current_level.creatures.values():
@@ -243,9 +253,11 @@ class PlayerCharacter(creatures.Humanoid):
         def cheat_free_motion():
             self.free_motion = not self.free_motion
             if self.free_motion:
-                Global.IO.Message("You can now walk through walls and ascend/descend without stairs.")
+                Global.IO.Message(
+                    "You can now walk through walls and ascend/descend without stairs.")
             else:
-                Global.IO.Message("You are no longer able to walk through solid objects.")
+                Global.IO.Message(
+                    "You are no longer able to walk through solid objects.")
 
         def cheat_clearout():
             for s in self.current_level.fov.Ball(self.x, self.y, 4, ignore_walls=True):
@@ -260,7 +272,8 @@ class PlayerCharacter(creatures.Humanoid):
                 pass
             else:
                 x, y = self.current_level.GetCoordsNear(self.x, self.y)
-                Global.IO.Message("Creating a {0} at {1}, {2}".format(monster, x, y))
+                Global.IO.Message(
+                    "Creating a {0} at {1}, {2}".format(monster, x, y))
                 m = getattr(creatures, monster)()
                 self.current_level.AddCreature(m, x, y)
 
@@ -302,7 +315,7 @@ class PlayerCharacter(creatures.Humanoid):
                 Global.IO.Message("You refuse to die!")
                 return
         s = Global.IO.GetDetailedStats(self)
-        t = [ "^R^ You Have Died", ""] + s
+        t = ["^R^ You Have Died", ""] + s
         Global.IO.MsgWindow(msg=t)
         raise GameOver
 
@@ -311,7 +324,8 @@ class PlayerCharacter(creatures.Humanoid):
         item = Global.IO.GetItemFromInventory(self, lang.prompt_drop)
         if item:
             if item.quantity > 1:
-                dropqty = Global.IO.GetQuantity(item.quantity, lang.prompt_drop_howmany)
+                dropqty = Global.IO.GetQuantity(
+                    item.quantity, lang.prompt_drop_howmany)
                 if dropqty is None:
                     return
             else:
@@ -352,10 +366,12 @@ class PlayerCharacter(creatures.Humanoid):
             ammo = self.ItemInSlot(lang.equip_slot_ammo)
             if ammo is None:
                 # No ammo equipped; check for appropriate ammo in inventory:
-                ammos = self.inventory.ItemsOfType(lang.itemtype_ammo_or_thrown, letters=False)
+                ammos = self.inventory.ItemsOfType(
+                    lang.itemtype_ammo_or_thrown, letters=False)
                 if len(ammos) == 0:
                     # No appropriate ammo carried:
-                    Global.IO.Message(lang.error_no_ammo % lang.ArticleName("your", bow))
+                    Global.IO.Message(lang.error_no_ammo %
+                                      lang.ArticleName("your", bow))
                     return
                 elif len(ammos) == 1:
                     # Only one carried; auto-equip it:
@@ -363,7 +379,8 @@ class PlayerCharacter(creatures.Humanoid):
                     self.Equip(ammo)
                 else:
                     # Multiple valid choices; ask the player for one and equip it:
-                    ammo = Global.IO.GetChoice(ammos, lang.prompt_which_ammo, nohelp=True)
+                    ammo = Global.IO.GetChoice(
+                        ammos, lang.prompt_which_ammo, nohelp=True)
                     if ammo is None:
                         return  # Player cancelled ammo choice; cancel fire.
                     self.Equip(ammo)
@@ -396,7 +413,8 @@ class PlayerCharacter(creatures.Humanoid):
 
         path_clear = cmd.blocked
 
-        Global.IO.AnimateProjectile((actual_path, path_clear), ammo.projectile_char, ammo.color)
+        Global.IO.AnimateProjectile(
+            (actual_path, path_clear), ammo.projectile_char, ammo.color)
         self.Delay(bow.fire_speed)
         if target:
             hit = self.MissileHitBonus()
@@ -404,11 +422,14 @@ class PlayerCharacter(creatures.Humanoid):
             differential = hit - evade
             if successful_hit(differential, target.level):
                 # Attack hit; calculate damage:
-                damage_roll = d(ammo.thrown_damage) + ammo.damage_bonus + d(bow.fire_damage) + bow.damage_bonus
+                damage_roll = d(ammo.thrown_damage) + ammo.damage_bonus + \
+                    d(bow.fire_damage) + bow.damage_bonus
                 protection_roll = quantize(target.ProtectionBonus())
                 damage = max(d("1d2"), damage_roll - protection_roll)
-                damage_taken = target.TakeDamage(damage, ammo.damage_type, source=self)
-                report_combat_hit(self, target, damage_taken, bow.verbs, bow.verbs_sp)
+                damage_taken = target.TakeDamage(
+                    damage, ammo.damage_type, source=self)
+                report_combat_hit(self, target, damage_taken,
+                                  bow.verbs, bow.verbs_sp)
             else:
                 report_combat_miss(self, target, bow.verbs, bow.verbs_sp)
 
@@ -449,7 +470,8 @@ class PlayerCharacter(creatures.Humanoid):
             if self.gain_str == 0:
                 self.stats.Modify("str", 1, permanent=True)
                 adj = lang.word_stronger
-                self.gain_str = max(1, int((self.stats("str", base=True)-1) / 4) - 1)
+                self.gain_str = max(
+                    1, int((self.stats("str", base=True)-1) / 4) - 1)
             else:
                 adj = lang.word_slightly + " " + lang.word_stronger
         elif stat == "dex":
@@ -458,7 +480,8 @@ class PlayerCharacter(creatures.Humanoid):
             if self.gain_dex == 0:
                 self.stats.Modify("dex", 1, permanent=True)
                 adj = lang.word_agiler
-                self.gain_dex = max(1, int((self.stats("dex", base=True)-1) / 4) - 1)
+                self.gain_dex = max(
+                    1, int((self.stats("dex", base=True)-1) / 4) - 1)
             else:
                 adj = lang.word_slightly + " " + lang.word_agiler
         elif stat == "int":
@@ -467,7 +490,8 @@ class PlayerCharacter(creatures.Humanoid):
             if self.gain_int == 0:
                 self.stats.Modify("int", 1, permanent=True)
                 adj = lang.word_smarter
-                self.gain_int = max(1, int((self.stats("int", base=True)-1) / 4) - 1)
+                self.gain_int = max(
+                    1, int((self.stats("int", base=True)-1) / 4) - 1)
             else:
                 adj = lang.word_slightly + " " + lang.word_smarter
         else:
@@ -483,7 +507,8 @@ class PlayerCharacter(creatures.Humanoid):
         # - allow for direction key selection
 
         # - If target selected, highlight and prompt for enter
-        t, p = Global.IO.GetTarget(target=self.target, target_range = target_range)
+        t, p = Global.IO.GetTarget(
+            target=self.target, target_range=target_range)
         if isinstance(t, creatures.Creature):
             self.target = t
             return self.target, linear_path(self.x, self.y, self.target.x, self.target.y,
@@ -492,7 +517,8 @@ class PlayerCharacter(creatures.Humanoid):
 
     def InitCommands(self):
         self.commands = []
-        self.commands.append(Command(lang.cmdname_inventory, 'i', self.Inventory))
+        self.commands.append(
+            Command(lang.cmdname_inventory, 'i', self.Inventory))
         #self.commands.append(Command(lang.cmdname_equipment, 'e', self.EquippedInventory))
         self.commands.append(Command(lang.cmdname_pickup, ',g', self.Pickup))
         self.commands.append(Command(lang.cmdname_drop, 'd', self.DropItem))
@@ -503,16 +529,26 @@ class PlayerCharacter(creatures.Humanoid):
         self.commands.append(Command(lang.cmdname_throw, 't', self.Throw))
         self.commands.append(Command(lang.cmdname_quaff, "q", self.Quaff))
         self.commands.append(Command(lang.cmdname_read, "r", self.Read))
-        self.commands.append(Command(lang.cmdname_targetnext, 9, self.TabTarget))
-        self.commands.append(Command(lang.cmdname_untarget, "T", self.UnTarget))
-        self.commands.append(Command(lang.cmdname_autorun, '.', self.BeginAutoRun))
-        self.commands.append(Command(lang.cmdname_autorest, 'R', self.BeginAutoRest))
-        self.commands.append(Command(lang.cmdname_examine, 'x', self.ExamineItem))
-        self.commands.append(Command(lang.cmdname_openclosedoor, 'o', self.OpenCloseDoor))
-        self.commands.append(Command(lang.cmdname_ascend, '<', self.AscendStairs))
-        self.commands.append(Command(lang.cmdname_descend, '>', self.DescendStairs))
-        self.commands.append(Command(lang.cmdname_detailedplayerstats, '@', self.DetailedStats))
-        self.commands.append(Command(lang.cmdname_message_log, 'M', self.MessageLog))
+        self.commands.append(
+            Command(lang.cmdname_targetnext, 9, self.TabTarget))
+        self.commands.append(
+            Command(lang.cmdname_untarget, "T", self.UnTarget))
+        self.commands.append(
+            Command(lang.cmdname_autorun, '.', self.BeginAutoRun))
+        self.commands.append(
+            Command(lang.cmdname_autorest, 'R', self.BeginAutoRest))
+        self.commands.append(
+            Command(lang.cmdname_examine, 'x', self.ExamineItem))
+        self.commands.append(
+            Command(lang.cmdname_openclosedoor, 'o', self.OpenCloseDoor))
+        self.commands.append(
+            Command(lang.cmdname_ascend, '<', self.AscendStairs))
+        self.commands.append(
+            Command(lang.cmdname_descend, '>', self.DescendStairs))
+        self.commands.append(
+            Command(lang.cmdname_detailedplayerstats, '@', self.DetailedStats))
+        self.commands.append(
+            Command(lang.cmdname_message_log, 'M', self.MessageLog))
         self.commands.append(Command(lang.cmdname_help, '?', self.CommandList))
         self.commands.append(Command(lang.cmdname_quit, 'Q', self.EndGame))
         self.commands.append(Command(lang.cmdname_cheat, 'C', self.Cheat))
@@ -568,7 +604,8 @@ class PlayerCharacter(creatures.Humanoid):
         elif len(pyro_items) == 1:
             i = pyro_items[0]
             if i.quantity > 1:
-                qty = Global.IO.GetQuantity(i.quantity, lang.prompt_pickup_howmany % i.Name())
+                qty = Global.IO.GetQuantity(
+                    i.quantity, lang.prompt_pickup_howmany % i.Name())
                 if qty is None:
                     return False
             else:
@@ -581,7 +618,8 @@ class PlayerCharacter(creatures.Humanoid):
             for i in pyro_items:
                 if i.quantity > 1 or Global.IO.YesNo(lang.prompt_pickup % i.Name()):
                     if i.quantity > 1:
-                        qty = Global.IO.GetQuantity(i.quantity, lang.prompt_pickup_howmany % i.Name())
+                        qty = Global.IO.GetQuantity(
+                            i.quantity, lang.prompt_pickup_howmany % i.Name())
                     else:
                         qty = 1
                     if qty is None or qty == 0:
@@ -592,7 +630,8 @@ class PlayerCharacter(creatures.Humanoid):
 
     def Quaff(self):
         "Choose a potion and quaff it."
-        potion = Global.IO.GetItemFromInventory(self, lang.prompt_quaff, types="!", notoggle=True)
+        potion = Global.IO.GetItemFromInventory(
+            self, lang.prompt_quaff, types="!", notoggle=True)
         if potion:
             try:
                 potion.Quaff(self)
@@ -601,7 +640,8 @@ class PlayerCharacter(creatures.Humanoid):
 
     def Read(self):
         "Choose a scroll and read it."
-        scroll = Global.IO.GetItemFromInventory(self, lang.prompt_read, types="?", notoggle=True)
+        scroll = Global.IO.GetItemFromInventory(
+            self, lang.prompt_read, types="?", notoggle=True)
         if scroll:
             try:
                 scroll.Read(self)
@@ -693,8 +733,8 @@ class PlayerCharacter(creatures.Humanoid):
                 dx, dy = offsets[k-49]
                 self.Walk(dx, dy)
             elif k == ord('m'):
-                #Global.IO.MsgWindow()
-                #Global.IO.ChoiceWindow()
+                # Global.IO.MsgWindow()
+                # Global.IO.ChoiceWindow()
                 Global.IO.DisplayEquipped(self)
             elif chr(k) in vi_offsets:
                 dx, dy = vi_offsets[chr(k)]
@@ -785,7 +825,8 @@ class PlayerCharacter(creatures.Humanoid):
                 return False
             else:
                 # More than one item in that slot; ask which to remove:
-                r = Global.IO.GetChoice(worn, lang.prompt_remove_which, nohelp=True)
+                r = Global.IO.GetChoice(
+                    worn, lang.prompt_remove_which, nohelp=True)
                 if r is None:
                     return False
                 self.Unequip(r)
@@ -793,7 +834,8 @@ class PlayerCharacter(creatures.Humanoid):
 
     def Unwear(self):
         "Let the player choose an item to unequip."
-        item = Global.IO.GetItemFromInventory(self, lang.prompt_unwear, equipped=True, notoggle=True)
+        item = Global.IO.GetItemFromInventory(
+            self, lang.prompt_unwear, equipped=True, notoggle=True)
         if item is None:
             return False  # Cancelled
         self.Unequip(item)
@@ -858,7 +900,8 @@ class Archetype(object):
     def GainLevel(self):
         pc = self.pc
         pc.level += 1
-        hp_gain, mp_gain = pc.stats("str", base=True) / 2, max(0, (pc.stats("int", base=True) - 7) / 2)
+        hp_gain, mp_gain = pc.stats(
+            "str", base=True) / 2, max(0, (pc.stats("int", base=True) - 7) / 2)
         self.hp += hp_gain
         pc.hp_max = int(self.hp)
         pc.hp += int(hp_gain)
@@ -878,10 +921,12 @@ class KrolDwarf(Archetype):
     desc = lang.archdesc_kroldwarf
 
     def __init__(self, pc):
-        armor = pyro_items.random_armor(-2, pyro_items.ChainShirt, nospecial=True)
+        armor = pyro_items.random_armor(-2,
+                                        pyro_items.ChainShirt, nospecial=True)
         pc.inventory.Pickup(armor)
         pc.Equip(armor, silent=True)
-        weapon = pyro_items.random_melee_weapon(0, pyro_items.LongSword, nospecial=True)
+        weapon = pyro_items.random_melee_weapon(
+            0, pyro_items.LongSword, nospecial=True)
         pc.inventory.Pickup(weapon)
         pc.Equip(weapon, silent=True)
         Archetype.__init__(self, pc)
@@ -898,7 +943,8 @@ class DisDwarf(Archetype):
         armor = pyro_items.random_armor(-2, pyro_items.Jerkin, nospecial=True)
         pc.inventory.Pickup(armor)
         pc.Equip(armor, silent=True)
-        weapon = pyro_items.random_melee_weapon(0, pyro_items.ShortSword, nospecial=True)
+        weapon = pyro_items.random_melee_weapon(
+            0, pyro_items.ShortSword, nospecial=True)
         pc.inventory.Pickup(weapon)
         pc.Equip(weapon, silent=True)
         Archetype.__init__(self, pc)
@@ -915,7 +961,8 @@ class KrolElf(Archetype):
         armor = pyro_items.random_armor(-2, pyro_items.Robe, nospecial=True)
         pc.inventory.Pickup(armor)
         pc.Equip(armor, silent=True)
-        weapon = pyro_items.random_melee_weapon(0, pyro_items.Dagger, nospecial=True)
+        weapon = pyro_items.random_melee_weapon(
+            0, pyro_items.Dagger, nospecial=True)
         pc.inventory.Pickup(weapon)
         pc.Equip(weapon, silent=True)
         Archetype.__init__(self, pc)
@@ -933,7 +980,8 @@ class DisElf(Archetype):
         armor = pyro_items.random_armor(-2, pyro_items.Jerkin, nospecial=True)
         pc.inventory.Pickup(armor)
         pc.Equip(armor, silent=True)
-        weapon = pyro_items.random_melee_weapon(0, pyro_items.Dagger, nospecial=True)
+        weapon = pyro_items.random_melee_weapon(
+            0, pyro_items.Dagger, nospecial=True)
         pc.inventory.Pickup(weapon)
         pc.Equip(weapon, silent=True)
         Archetype.__init__(self, pc)
@@ -960,7 +1008,8 @@ class KrolHuman(Archetype):
         armor = pyro_items.random_armor(-2, pyro_items.Jerkin, nospecial=True)
         pc.inventory.Pickup(armor)
         pc.Equip(armor, silent=True)
-        weapon = pyro_items.random_melee_weapon(0, pyro_items.BattleAxe, nospecial=True)
+        weapon = pyro_items.random_melee_weapon(
+            0, pyro_items.BattleAxe, nospecial=True)
         pc.inventory.Pickup(weapon)
         pc.Equip(weapon, silent=True)
         bow = pyro_items.ShortBow()
@@ -982,7 +1031,8 @@ class DisHuman(Archetype):
         armor = pyro_items.random_armor(-2, pyro_items.Jerkin, nospecial=True)
         pc.inventory.Pickup(armor)
         pc.Equip(armor, silent=True)
-        weapon = pyro_items.random_melee_weapon(0, pyro_items.Dagger, nospecial=True)
+        weapon = pyro_items.random_melee_weapon(
+            0, pyro_items.Dagger, nospecial=True)
         pc.inventory.Pickup(weapon)
         pc.Equip(weapon, silent=True)
         Archetype.__init__(self, pc)

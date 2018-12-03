@@ -4,13 +4,15 @@ from creature_base import *
 class scruffy_looking_hobbit(Humanoid):
     name = "scruffy_looking_hobbit"
     tile = "h"
-    level = 3
+    level = 1
     color = c_Blue
     can_open_doors = True
     hp_max = 9
     str, dex, int = 3, 16, 5
     move_speed = 110
     desc = """ An annoying little hobbit."""
+    resists_fire = True
+    immune_electricity = True
     attacks = [[pyro_items.Punch("1d3", 80), 1]]
 
 
@@ -167,15 +169,15 @@ class Archer(Humanoid):
         self.Equip(arrow)
 
 
-all_humanoids = [scruffy_looking_hobbit,
-                 dark_elf,
-                 dark_elven_mage,
-                 dark_elven_warrior,
-                 gnome_mage,
-                 dark_elven_priest,
-                 dark_elven_lord,
-                 dark_elven_druid,
-                 mind_flayer,
-                 dark_elven_sorcerer,
-                 Ranger,
-                 Archer]
+all_humanoids = [scruffy_looking_hobbit]#,
+#                 dark_elf,
+#                 dark_elven_mage,
+#                 dark_elven_warrior,
+#                 gnome_mage,
+#                 dark_elven_priest,
+#                 dark_elven_lord,
+#                 dark_elven_druid,
+#                 mind_flayer,
+#                 dark_elven_sorcerer,
+#                 Ranger,
+#                 Archer]

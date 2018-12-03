@@ -208,7 +208,7 @@ class Level(object):
             i = max(0, min(self.level_width-1, x+offset[0]))
             j = max(0, min(self.level_height-1, y+offset[1]))
             if self.data[j][i] in what:
-                    num += 1
+                num += 1
         return num
 
     def adjacent_to(self, x, y, what):
@@ -218,7 +218,7 @@ class Level(object):
             i = max(0, min(self.level_width-1, x+offset[0]))
             j = max(0, min(self.level_height-1, y+offset[1]))
             if self.data[j][i] in what:
-                    num += 1
+                num += 1
         return num
 
     def area_free(self, x, y, w, h):

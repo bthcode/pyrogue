@@ -12,6 +12,7 @@ import logging
 
 class Dungeon(object):
     "An entire multilevel dungeon."
+
     def __init__(self, name="dungeon"):
         self.name = name
         self.levels = dict()
@@ -32,6 +33,7 @@ class Dungeon(object):
 
 class Level(object):
     "A single level of a dungeon."
+
     def __init__(self, dungeon, depth):
         self.timer = 0
         self.dungeon, self.depth = dungeon, depth
@@ -64,7 +66,8 @@ class Level(object):
     def _add_stairs(self):
         "Add at least one up and one down staircase, not in the same room."
         self.up_room = choice(self.layout.rooms)
-        self.down_room = choice([r for r in self.layout.rooms if r != self.up_room])
+        self.down_room = choice(
+            [r for r in self.layout.rooms if r != self.up_room])
         x, y, w, h = self.up_room
         i, j = x + irand(1, w - 2), y + irand(1, h - 2)
         if self.depth == 1:
@@ -162,7 +165,7 @@ class Level(object):
             for j in range(y-1, y+2):
                 if (0 <= i < self.layout.level_width and
                     0 <= j < self.layout.level_height and
-                    not (i == x and j == y)):
+                        not (i == x and j == y)):
                     adj.append((i, j))
         return adj
 
