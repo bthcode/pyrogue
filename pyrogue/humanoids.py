@@ -13,7 +13,9 @@ class scruffy_looking_hobbit(Humanoid):
     desc = """ An annoying little hobbit."""
     resists_fire = True
     immune_electricity = True
-    attacks = [[pyro_items.Punch("1d3", 80), 1]]
+    attacks = [[pyro_items.Punch("1d3", 80), 1],
+               [magic.IceBolt(), 1],
+               [magic.FireBolt(), 1]]
 
 
 class dark_elf(Humanoid):

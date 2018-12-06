@@ -56,6 +56,12 @@ class PlayerCharacter(creatures.Humanoid):
         self.archetype.hp, self.archetype.mp = self.stats(
             "str"), max(0, self.stats("int") - 7)
         self.hp_max, self.mp_max = self.archetype.hp, self.archetype.mp
+        self.immune_electricity = self.archetype.immune_electricity
+        self.resists_electricity = self.archetype.resists_electricity
+        self.immune_ice = self.archetype.immune_ice
+        self.resists_ice = self.archetype.resists_ice
+        self.immune_fire = self.archetype.immune_fire
+        self.resists_fire = self.archetype.resists_fire
         # number of gains needed to go up a notch
         self.gain_str, self.gain_dex, self.gain_int = 1, 1, 1
         self.hp, self.mp = self.hp_max, self.mp_max
@@ -293,9 +299,15 @@ class PlayerCharacter(creatures.Humanoid):
                   Cheat("Target test", "", cheat_test),
                   Cheat("Summon monster", "", cheat_summon_monster),
                   Cheat("Get Item", "", cheat_pyro_item)]
-        cheat = Global.IO.GetChoice(cheats, "Cheat how?", nocancel=False)
-        if cheat is not None:
-            cheat.fn()
+        choices = []
+        letters = 'abcdefghijklmnopqrstuvwxyz'
+        for idx, cheat in enumerate(cheats):
+            choices.append([letters[idx], cheat.name, cheat.desc])
+
+        chosen = Global.IO.ChoiceWindow(title="Choose a Cheat Code", msg=choices)
+        logging.debug("cheat choice={0}".format(chosen))
+        if chosen is not None and 0 <= chosen < len(cheats):
+            cheats[chosen].fn()
 
     def CommandList(self):
         Global.IO.CommandList(self)
@@ -652,7 +664,47 @@ class PlayerCharacter(creatures.Humanoid):
         Global.IO.TabTarget()
         self.tab_targeting = True
 
-    def TakeDamage(self, amount, type=None, source=None):
+    def AdjustDamageForEffect(self, amount, damage_type=None, source=None):
+        logging.debug("damage_type={0}".format(damage_type))
+        msg = None
+        if damage_type == 'electricty':
+            if self.immune_electricity:
+                amount = 0
+                msg = "You are unharmed by elecricty"
+            elif self.resists_electricity:
+                amount -= amount // 2
+                msg = "You resist electricity"
+            else:
+                msg = "You are shocked"
+        elif damage_type == 'ice':
+            if self.immune_ice:
+                logging.debug("immune ice")
+                amount = 0
+                msg = "You are unharmed by ice"
+            elif self.resists_ice:
+                logging.debug("resist ice")
+                amount -= amount // 2
+                msg = "You resist ice"
+            else:
+                logging.debug("ice full damage")
+                msg = "You are frozen"
+        elif damage_type == 'fire':
+            if self.immune_fire:
+                amount = 0
+                msg = "You are unharmed by fire"
+            elif self.resists_fire:
+                amount -= amount // 2
+                msg = "You resist fire"
+            else:
+                msg = "You are burned"
+
+        #if msg:
+        #    Global.IO.Message(msg)
+
+        return amount
+
+    def TakeDamage(self, amount, damage_type=None, source=None):
+        amount = self.AdjustDamageForEffect(amount,damage_type,source)
         self.hp -= amount
         return amount
 
@@ -795,6 +847,7 @@ class PlayerCharacter(creatures.Humanoid):
                     desc = lang.msg_feature_here % f.name
             if desc:
                 Global.IO.Message(desc)
+            self.current_level.Display(self)
             return True
         else:
             return False
@@ -891,6 +944,12 @@ class Dis(Diety):
 
 
 class Archetype(object):
+    resists_electricity = False
+    resists_ice = False
+    resists_fire = False
+    immune_electricity = False
+    immune_ice = False
+    immune_fire = False
     def __init__(self, pc):
         self.pc = pc
         self.gain_str, self.gain_dex, self.gain_int, self.gain_any = 0, 0, 0, 0
@@ -980,6 +1039,8 @@ class DisElf(Archetype):
         armor = pyro_items.random_armor(-2, pyro_items.Jerkin, nospecial=True)
         pc.inventory.Pickup(armor)
         pc.Equip(armor, silent=True)
+        self.resists_fire = True
+        self.immune_ice = True
         weapon = pyro_items.random_melee_weapon(
             0, pyro_items.Dagger, nospecial=True)
         pc.inventory.Pickup(weapon)

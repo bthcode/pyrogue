@@ -54,6 +54,7 @@ class Berserker(AI):
         if self.state  == "wander":
             if self.dir  == None:
                 self.PickNewDirection()
+
             if self.mob.can_see_pc:
                 self.state = "chase"
                 return
@@ -349,14 +350,7 @@ class Creature(object):
             return feature
         return None
 
-    def TakeDamage(self, amount, damage_type=None, source=None):
-        # This method can be overridden for special behavior (fire heals elemental, etc)
-        #resists_fire = False
-        #resists_ice = False
-        #resists_electricity = False
-        #immune_fire = False
-        #immune_ice = False
-        #immune_electricty = False
+    def AdjustDamageForEffect(self, amount, damage_type=None, source=None):
         msg = None
         if damage_type == 'electricty':
             if self.immune_electricity:
@@ -388,6 +382,12 @@ class Creature(object):
 
         if msg:
             Global.IO.Message(msg)
+
+        return amount
+
+    def TakeDamage(self, amount, damage_type=None, source=None):
+        # This method can be overridden for special behavior (fire heals elemental, etc)
+        self.AdjustDamageForEffect(amount, damage_type, source)
 
         self.hp -=  amount
         # Check for death:

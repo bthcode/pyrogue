@@ -76,3 +76,25 @@ Effect Spells:
         Update:
             UpdateEffects:
                 - if expired: e.Remove(self)
+
+Turn order:
+==========
+
+Level::Update()
+    - Creature::Update()
+        - AI::Update()
+              - Creature::Walk()
+                   - Level::MoveCreature()
+                        - self.Dirty(x,y)
+                        - self.creatures[(x,y)] = mob
+                        - mob.x, mob.y = x, y 
+                        - self.Dirty(nex x, new y)
+              -- or --
+              - Creature::Attack()
+                    - attack.Attack()
+                        - Global.IO.Message()
+                            - curses.getch()
+
+     - Player::Update()
+          - self.Walk()
+          - creatures.Creature.Walk(x,y)

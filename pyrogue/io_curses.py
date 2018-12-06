@@ -225,7 +225,6 @@ class IOWrapper(object):
 
     def refresh(self):
         Global.FullDungeonRefresh = True
-        self.msg_win.addstr(1, 1, 'msgs')
         self.msg_win.touchwin()
         self.msg_win.refresh()
         self.status_win.touchwin()
@@ -284,14 +283,15 @@ class IOWrapper(object):
             if chr(k) in opts:
                 answer = chr(k)
                 break
-        self.screen.addstr(0, 0, " " * self.width)
+        self.msg_win.addstr(0, 0, " " * self.width)
         self.messages_displayed = 0
         return answer
 
     def BeginTurn(self):
         "Called right after input is taken from the player."
-        self.screen.addstr(0, 0, " " * self.width)
-        self.screen.addstr(1, 0, " " * self.width)
+        self.msg_win.clear()
+        self.msg_win.touchwin()
+        self.msg_win.refresh()
         self.messages_displayed = 0
 
     def ClearScreen(self):
@@ -915,11 +915,12 @@ class IOWrapper(object):
     def MorePrompt(self):
         if self.messages_displayed > 1:
             self.addstr(1, self.width-7, lang.prompt_more,
-                        self.stdscr, c_Yellow)
+                        self.msg_win, c_Yellow)
             self.GetKey()
             self.messages_displayed = 0
-            self.addstr(0, 0, " " * self.width, self.stdscr)
-            self.addstr(1, 0, " " * self.width, self.stdscr)
+            self.msg_win.clear()
+            self.msg_win.touchwin()
+            self.msg_win.refresh()
 
     def MsgWindow(self, msg=["a", "b", "c", "d", "e", "f",
                              "g", "h", "i", "j", "k", "l",
@@ -927,7 +928,7 @@ class IOWrapper(object):
                              "s", "t", "u", "v", "w", "x",
                              "y", "z", "1", "2", "3", "4",
                              "5", "6", "7", "8", "9", "10",
-                             "11", "12", "13", "14", "15"], center=False):
+                             "11", "12", "13", "14", "15"]):
         '''Popup Panel with text
 
         params:
@@ -959,7 +960,7 @@ class IOWrapper(object):
                 self.addstr_color(paint_idx, x, line, win, c_Yellow)
                 paint_idx += 1
             self.addstr_color(self.game_height-2, 2,
-                              "[SP] forward [B] back", win, c_Green)
+                              " [ESC] close [SP] forward [B] back", win, c_Green)
             curses.doupdate()
             key = win.getch()
             if key == 0x20:
@@ -972,8 +973,10 @@ class IOWrapper(object):
                 start_idx = max(0, start_idx - max_height)
                 end_idx = min(start_idx + max_height, max_height)
                 end_idx = min(end_idx, len(msg))
-            else:
+            elif key in [27,10]:
                 break
+            else:
+                pass
             win.clear()
         p.hide()
         panel.update_panels()
@@ -1150,15 +1153,17 @@ class IOWrapper(object):
 
     def ShowMessage(self, msg, attr, nowait, forcewait):
         self.MorePrompt()
-        self.addstr_color(self.messages_displayed, 0, msg, self.stdscr, attr)
+        self.addstr_color(self.messages_displayed, 0, msg, self.msg_win , attr)
         self.wait_x = clen(msg) + 1
         if nowait:
-            self.screen.refresh()
+            self.msg_win.refresh()
         elif forcewait:
             self.messages_displayed = 2
             self.MorePrompt()
         else:
             self.messages_displayed += 1
+        self.msg_win.touchwin()
+        self.msg_win.refresh()
 
     def ShowStatus(self):
         "Show key stats to the player."
@@ -1232,15 +1237,19 @@ class IOWrapper(object):
         Global.pc.target = mob
 
     def WaitPrompt(self, y, attr=c_white, prompt=lang.prompt_any_key):
-        self.addstr(y, 0, prompt, self.stdscr, attr)
+        self.addstr(y, 0, prompt, self.msg_win, attr)
         self.GetKey()
 
     def YesNo(self, question, attr=c_yellow):
         "Ask the player a yes or no question."
         self.MorePrompt()
-        self.addstr(0, 0, " " * self.width, self.stdscr)
+        #self.addstr(0, 0, " " * self.width, self.msg_win)
+        self.msg_win.clear()
         self.addstr(0, 0, "%s [%s/%s]: " %
-                    (question, lang.word_yes_key, lang.word_no_key), self.stdscr, attr)
+                    (question, lang.word_yes_key, lang.word_no_key), self.msg_win, attr)
+        logging.debug("yes no 3")
+        self.msg_win.touchwin()
+        self.msg_win.refresh()
         yes_keys = lang.word_yes_key.upper() + lang.word_yes_key.lower()
         no_keys = lang.word_no_key.upper() + lang.word_no_key.lower()
         while True:
@@ -1251,7 +1260,10 @@ class IOWrapper(object):
             elif k in no_keys:
                 answer = False
                 break
-        self.addstr(0, 0, " " * self.width, self.stdscr)
+        #self.addstr(0, 0, " " * self.width, self.msg_win)
+        self.msg_win.clear()
+        self.msg_win.touchwin()
+        self.msg_win.refresh()
         self.messages_displayed = 0
         return answer
 
