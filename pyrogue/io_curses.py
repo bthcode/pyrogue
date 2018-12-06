@@ -1049,7 +1049,7 @@ class IOWrapper(object):
         win.box()
         x = 1
         choice = 0
-        valid_keys = [ord(x[0]) for x in msg]
+        valid_keys = [ord(msg_item[0]) for msg_item in msg]
 
         items_to_show = 20
 
