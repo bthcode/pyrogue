@@ -1,7 +1,7 @@
 import curses
 from curses import wrapper
 from curses import panel
-import logging
+import logging, pprint
 
 from util import *
 import pyro_items
@@ -376,67 +376,42 @@ class IOWrapper(object):
     def DetailedStats(self, pc):
         self.MsgWindow(self.GetDetailedStats(pc))
 
-    def DisplayEquipped(self, mob):
-        display = []
-        letters = "abcdefghijklmnopqrstuvwxyz01234567"
-
-        display_types = pyro_items.types
-        for type, symbol in display_types:
-            for i in mob.inventory.ItemsOfType(type):
-                if i[0] in mob.equipped:
-                    display.append(
-                        [i[1], "{0}: {1}".format(type, i[0].name), i[0].desc])
-
-        display.sort(key=lambda x: x[0])
-        ret = self.ChoiceWindow(title="Equipped", msg=display)
-
     def DisplayInventory(self, mob, norefresh=False, equipped=False, types=""):
         "Display inventory."
-        lines = []
-        self.ClearScreen()
-        y = 0
-        if equipped:
-            title = lang.label_equipped_items
-        else:
-            title = lang.label_backpack_items
-        hattr, lattr, sattr = c_Yellow, c_yellow, c_White
-        if mob.inventory.Num() == 0:
-            # No items in the inventory:
-            if mob.is_pc:
-                self.addstr(y, 0, lang.error_carrying_nothing,
-                            self.stdscr, hattr)
-            else:
-                self.addstr(y, 0, lang.error_mob_carrying_nothing,
-                            self.stdscr, hattr)
-            return y+1
-        if mob.is_pc:
-            weight = lang.label_inventory_weight % (
-                mob.inventory.TotalWeight(), mob.inventory.Capacity())
-        else:
-            weight = ""
-        self.addstr(y, 0, "%s: %s" % (title, weight), self.stdscr, hattr)
-        y += 1
+        choices = []
         if types == "":
             display_types = pyro_items.types
         else:
             display_types = [t for t in pyro_items.types if t[1] in types]
-        for type, symbol in display_types:
-            itemlist = [i for i in mob.inventory.ItemsOfType(type)
-                        if (equipped and i[0] in mob.equipped)
-                        or (not equipped and i[0] not in mob.equipped)]
-            if itemlist:
-                self.addstr(y, 0, symbol, self.stdscr, sattr)
-                self.addstr(y, 2, "%s:" % type, self.stdscr, hattr)
-                y += 1
-                for i, letter in itemlist:
-                    if i.quantity > 1:
-                        qtystr = "%sx " % i.quantity
-                    else:
-                        qtystr = ""
-                    self.addstr_color(y, 4, "^Y^%s^0^: %s%s" %
-                                      (letter, qtystr, i.Name()), self.stdscr, lattr)
-                    y += 1
-        return y
+
+        while True:
+            choices = []
+            for type, symbol in display_types:
+                if equipped:
+                    itemlist = [i for i in mob.inventory.ItemsOfType(type) if \
+                                i[0] in mob.equipped ]
+                else:
+                    itemlist = [i for i in mob.inventory.ItemsOfType(type) if not \
+                                i[0] in mob.equipped ]
+                for x, letter in itemlist:
+                    choices.append([letter, x.name, x.desc])
+
+            if equipped:
+                cmds = ['*', '[*] Inventory']
+                title = 'Equipment'
+            else:
+                cmds = ['*', '[*] Equipment']
+                title = 'Inventory'
+            choice = self.ChoiceWindow(title=title, msg=choices, cmds=cmds)
+            if choice is None:
+                return None
+            elif choice is '*':
+                logging.debug('caught *')
+                equipped = not equipped
+            else:
+                ret = choices[choice][0]
+                return ret
+
 
     def DisplayText(self, text, attr=c_white):
         "Display multiline text (\n separated) and wait for a keypress."
@@ -591,48 +566,13 @@ class IOWrapper(object):
         # If notoggle is true, then the player can't move between equipped and backpack
         hattr, lattr, sattr = c_Yellow, c_yellow, c_White
         need_refresh = True
-        while True:
-            if mob.inventory.Num() == 0:
-                y = self.DisplayInventory(mob, norefresh=True)
-                self.addstr(y, 0, lang.prompt_any_key, self.stdscr, hattr)
-                item = None
-                self.GetKey()
-                break
-            elif need_refresh:
-                if prompt is None:
-                    prompt = lang.prompt_choose_item
-                if equipped:
-                    other = lang.label_backpack_items.lower()
-                else:
-                    other = lang.label_equipped_items.lower()
-                y = self.DisplayInventory(
-                    mob, norefresh=True, equipped=equipped, types=types)
-                if notoggle:
-                    toggle = ""
-                else:
-                    toggle = "'/' for %s, " % other
-                pr = "%s (%s%s): " % (prompt, toggle,
-                                      lang.label_space_to_cancel)
-                self.screen.addstr(y, 0, pr, hattr)
-                need_refresh = False
-                # TODO: need_refresh is no longer meaningful
-            k = self.GetKey()
-            if k in [SPC, ESC]:
-                item = None     # Cancelled by user; return None.
-                break
-            if k == 47 and not notoggle:    # "/"
-                equipped = not equipped
-                need_refresh = True
-            try:
-                item = mob.inventory.GetItemByLetter(chr(k))
-                if item is None:
-                    continue
-                break
-            except ValueError:
-                continue
-        self.ClearScreen()
-        Global.pc.current_level.Display(Global.pc)
-        self.ShowStatus()
+        k = self.DisplayInventory(mob, types, equipped=equipped)
+        try:
+            item = mob.inventory.GetItemByLetter(k)
+            if item is None:
+                return None
+        except ValueError:
+            return None
         return item
 
     def GetKey(self):
@@ -1025,7 +965,8 @@ class IOWrapper(object):
                           ["1", "11", "11"],
                           ["1", "12", "12"],
                           ["1", "13", "13"],
-                          ["1", "14", "14"]]):
+                          ["1", "14", "14"]],
+                     cmds = None ):
         ''' Popup Panel with List of Choices
 
         params:
@@ -1050,6 +991,8 @@ class IOWrapper(object):
         x = 1
         choice = 0
         valid_keys = [ord(msg_item[0]) for msg_item in msg]
+        if cmds:
+            cmd_keys = [ ord(k) for k in cmds[0] ]
 
         items_to_show = 20
 
@@ -1069,6 +1012,9 @@ class IOWrapper(object):
             screen_help = "[ESC] : Exit, [SP] : Pg Down, [UP/DOWN] Scroll, [RET] Select [LETTER] Select"
             self.addstr_color(self.game_height-4, 2,
                               screen_help, win, c_Yellow)
+            if cmds:
+                self.addstr_color(self.game_height-3,2,
+                                  cmds[1], win, c_Yellow)
 
             draw_idx = 3
             for idx in range(first_idx, last_idx):
@@ -1111,6 +1057,9 @@ class IOWrapper(object):
                 if choice < 0:
                     choice = len(msg) - 1
             elif key in valid_keys:
+                ret = chr(key)
+                break
+            elif key in cmd_keys:
                 ret = chr(key)
                 break
             elif key in [curses.KEY_ENTER, 10]:

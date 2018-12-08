@@ -150,6 +150,7 @@ class DefaultAttack(MeleeAttackType):
 
 class Item(object):
     "Inanimate objects"
+    desc = "A Generic Item"
     name = ">>Generic Item<<"
     type = "Other"
     weight = 1.0
@@ -658,6 +659,7 @@ class Potion(Item):
 
 
 class Scroll(Item):
+    desc = "A scroll"
     type = lang.itemtype_scrolls
     tile = "?"
     color = c_White

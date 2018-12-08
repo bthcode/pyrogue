@@ -355,8 +355,6 @@ class PlayerCharacter(creatures.Humanoid):
 
     def EquippedInventory(self):
         Global.IO.DisplayInventory(self, equipped=True)
-        Global.IO.GetKey()
-        Global.IO.ClearScreen()
 
     def ExamineItem(self):
         "Show a detailed description of an item."
@@ -531,12 +529,12 @@ class PlayerCharacter(creatures.Humanoid):
         self.commands = []
         self.commands.append(
             Command(lang.cmdname_inventory, 'i', self.Inventory))
-        #self.commands.append(Command(lang.cmdname_equipment, 'e', self.EquippedInventory))
+        self.commands.append(Command(lang.cmdname_equipment, 'e', self.EquippedInventory))
         self.commands.append(Command(lang.cmdname_pickup, ',g', self.Pickup))
         self.commands.append(Command(lang.cmdname_drop, 'd', self.DropItem))
         self.commands.append(Command(lang.cmdname_wear, 'w', self.Wear))
         self.commands.append(Command(lang.cmdname_unwear, 'W', self.Unwear))
-        self.commands.append(Command(lang.cmdname_cast, 'c', self.CastSpell))
+        self.commands.append(Command(lang.cmdname_cast, 'm', self.CastSpell))
         self.commands.append(Command(lang.cmdname_fire, 'f', self.Fire))
         self.commands.append(Command(lang.cmdname_throw, 't', self.Throw))
         self.commands.append(Command(lang.cmdname_quaff, "q", self.Quaff))
@@ -568,8 +566,6 @@ class PlayerCharacter(creatures.Humanoid):
 
     def Inventory(self):
         Global.IO.DisplayInventory(self)
-        Global.IO.GetKey()
-        Global.IO.ClearScreen()
 
     def MessageLog(self):
         Global.IO.MessageLog()
@@ -784,10 +780,6 @@ class PlayerCharacter(creatures.Humanoid):
                 # Movement key:
                 dx, dy = offsets[k-49]
                 self.Walk(dx, dy)
-            elif k == ord('m'):
-                # Global.IO.MsgWindow()
-                # Global.IO.ChoiceWindow()
-                Global.IO.DisplayEquipped(self)
             elif chr(k) in vi_offsets:
                 dx, dy = vi_offsets[chr(k)]
                 self.Walk(dx, dy)
