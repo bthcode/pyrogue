@@ -30,6 +30,8 @@ class PlayerCharacter(creatures.Humanoid):
     vision_radius = 80
     attacks = []
 
+    stealth = 100
+
     def __init__(self):
         Global.pc = self
         # Do generic humanoid creature initialization:
@@ -693,6 +695,9 @@ class PlayerCharacter(creatures.Humanoid):
                 msg = "You resist fire"
             else:
                 msg = "You are burned"
+        elif damage_type == 'sleep':
+            self.is_asleep = True
+            msg = "You are asleep"
 
         #if msg:
         #    Global.IO.Message(msg)
@@ -1033,6 +1038,7 @@ class DisElf(Archetype):
         pc.Equip(armor, silent=True)
         self.resists_fire = True
         self.immune_ice = True
+        self.stealth = 100
         weapon = pyro_items.random_melee_weapon(
             0, pyro_items.Dagger, nospecial=True)
         pc.inventory.Pickup(weapon)
@@ -1050,6 +1056,7 @@ class DisElf(Archetype):
         pc.spells.append(magic.Blink())
         pc.spells.append(magic.Teleport())
         pc.spells.append(magic.SlowOther())
+        pc.spells.append(magic.SleepOther())
 
 
 class KrolHuman(Archetype):

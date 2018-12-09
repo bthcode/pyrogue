@@ -106,6 +106,7 @@ class IOWrapper(object):
         self.stdscr.keypad(1)
         curses.curs_set(0)
 
+        self.messages_displayed = 0
         # Colors
         self.colors = [curses.color_pair(0)]
         for i in range(1, 16):

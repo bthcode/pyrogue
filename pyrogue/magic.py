@@ -516,7 +516,6 @@ class SpeedBuff(Buff):
                 Global.IO.Message(lang.effect_speed_buff_gone_mob %
                                   lang.ArticleName("The", target))
 
-
 class SlowOther(OtherEffectSpell):
     name = "Slow Other"
     shortcut = "wot"
@@ -584,6 +583,21 @@ class MagicMissile(BoltSpell):
 
     def Damage(self, caster):
         return d("1d3")
+
+
+class SleepOther(BoltSpell):
+    name = "Sleep Other"
+    shortcut = "sot"
+    harmful = True
+    level = 1
+    mp_cost = 1
+    range = 20
+    damage_type = "sleep"
+    projectile_char, projectile_color = '*', c_Cyan
+    desc = "Make the other guy sleep"
+
+    def Damage(self, caster):
+        return 0
 
 
 class LightningBolt(BoltSpell):

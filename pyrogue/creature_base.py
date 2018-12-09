@@ -50,6 +50,10 @@ class Berserker(AI):
     def Update(self):
         "Take one action"
         pc = Global.pc
+        if self.mob.is_sleeping:
+            if not self.mob.TryWakeUp():
+                self.mob.Walk(0,0)
+                return
         #TODO: Generalize this to follow any mob, not just PC.
         if self.state  == "wander":
             if self.dir  == None:
@@ -167,6 +171,11 @@ class Creature(object):
     immune_fire = False
     immune_ice = False
     immune_electricity = False
+
+    # Sleep and Stealth
+    is_sleeping = True
+    wakefulness = 50
+    stealth     = 20  # 0:100 - higher is stealthier
 
     def __init__(self):
         self.effects = []
@@ -379,13 +388,17 @@ class Creature(object):
                 msg = "The {0} resists".format(self.name)
             else:
                 msg = "The {0} is burned".format(self.name)
-
+        elif damage_type == 'sleep':
+            self.is_sleeping = True
+            msg = "The {0} falls asleep".format(self.name)
         if msg:
             Global.IO.Message(msg)
 
         return amount
 
     def TakeDamage(self, amount, damage_type=None, source=None):
+        if self.is_sleeping:
+            self.WakeUp()
         # This method can be overridden for special behavior (fire heals elemental, etc)
         self.AdjustDamageForEffect(amount, damage_type, source)
 
@@ -395,6 +408,7 @@ class Creature(object):
             self.Die()
             if source is Global.pc:
                 Global.pc.GainXP(self.kill_xp)
+
         return amount
 
     def TakeEffect(self, new_effect, duration):
@@ -412,6 +426,31 @@ class Creature(object):
         if not overrides:
             new_effect.Apply(self)
             self.effects.append(new_effect)
+
+    def TryWakeUp(self):
+        '''
+        takes into account:
+            distance to pc
+            pc stealth
+            mob wakefulness
+            roll
+        we want:
+            if player stealth low, high chance of wake up regardless
+            if mob wakefulness high, high chance of wake up, but stealth overrides
+            it should be about 10x harder at distance of 20 than at distance of 1
+        '''
+        pc = Global.pc
+        distance_to_pc = calc_distance( pc.x, pc.y, self.x, self.y)
+        if distance_to_pc > 20:
+            return False
+        roll = d('1d20')
+        #ans = 0.5/(np.arange(1,20,1)) * 50/(50 * 4))
+        ans = (0.5/distance_to_pc) * (self.wakefulness*roll/(pc.stealth))
+        logging.debug("pc.stealth={0}, distance_to_pc = {1}, wakefulness={4}, roll = {2}, ans={3}".format( pc.stealth, distance_to_pc, roll, ans, self.wakefulness))
+        if ans > 1:
+            self.WakeUp()
+            return True
+        return False
 
     def Log(self):
         logging.debug(self)
@@ -472,6 +511,11 @@ class Creature(object):
         self.current_level.MoveCreature(self, self.x + dx, self.y + dy)
         self.Delay(self.move_speed)
         return True, ""
+
+    def WakeUp(self):
+        logging.debug("WakeUp")
+        Global.IO.Message("The {0} wakes up".format(self.name))
+        self.is_sleeping = False
 
     def Wield(self, item):
         "Wield the item as a melee weapon."
