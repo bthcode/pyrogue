@@ -208,6 +208,16 @@ class Level(object):
         except KeyError:
             return None
 
+    def CreaturesInRange(self, x, y, r):
+        'Return creatues in range r'
+        pts = self.fov.Ball(x,y, r, ignore_walls=True)
+        ret = []
+        for pt in pts:
+            c = self.CreatureAt(pt[0], pt[1])
+            if c:
+                ret.append(c)
+        return ret
+
     def Dirty(self, x, y):
         "Mark the given square as needing to be repainted."
         self.dirty[(x, y)] = True

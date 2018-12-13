@@ -296,8 +296,7 @@ class OtherEffectSpell(Spell):
         else:
             tp = lang.ArticleName("the", target)
         if Global.pc in (caster, target) or caster.pc_can_see or target.pc_can_see:
-            Global.IO.Message("%s %s %s%s^0^ %s." %
-                              (cp, self.name.lower(), color, "barf", tp, color))
+            Global.IO.Message("{0} {1} {2}{3}^0^ {4}.".format(cp, self.name.lower(), color, tp, color))
         if caster is Global.pc and target.dead:
             Global.IO.Message(lang.combat_you_killed %
                               (lang.ArticleName("the", target), target.kill_xp))
@@ -345,6 +344,12 @@ class OtherEffectSpell(Spell):
         Global.IO.AnimateProjectile(
             (actual_path, path_clear), self.projectile_char, self.projectile_color)
         if target:
+            if target.ResistMagic(caster, self.damage_type):
+                if target is Global.pc:
+                    Global.IO.Message('You resist'.format(target.name))
+                else:
+                    Global.IO.Message('The {0} resists'.format(target.name))
+                return
             target.TakeEffect(self.Effect(target), self.Duration(target))
             color = "^Y^"
             if caster is Global.pc:
@@ -358,8 +363,8 @@ class OtherEffectSpell(Spell):
             else:
                 tp = lang.ArticleName("the", target)
             if Global.pc in (caster, target) or caster.pc_can_see or target.pc_can_see:
-                Global.IO.Message("%s %s %s%s^0^ %s." %
-                                  (cp, self.name.lower(), color, "barf", tp))
+                Global.IO.Message("%s %s %s %s." %
+                                  (cp, self.name.lower(), color, tp))
             if caster is Global.pc and target.dead:
                 Global.IO.Message(lang.combat_you_killed %
                                   (lang.ArticleName("the", target), target.kill_xp))
@@ -516,6 +521,24 @@ class SpeedBuff(Buff):
                 Global.IO.Message(lang.effect_speed_buff_gone_mob %
                                   lang.ArticleName("The", target))
 
+class SleepOtherBuff(Buff):
+    name = "Sleep"
+
+    def __init__(self, desc="Cause Sleep"):
+        self.desc = desc
+
+    def Apply(self, target, silent=False):
+        target.FallAsleep()
+        if not silent:
+            if target is Global.pc:
+                Global.IO.Message("Someone tries to make you sleep")
+            elif target.pc_can_see:
+                Global.IO.Message("You try to make the {0} sleep".format(target.name))
+
+    def Remove(self, target, silent=False):
+        pass
+
+
 class SlowOther(OtherEffectSpell):
     name = "Slow Other"
     shortcut = "wot"
@@ -523,14 +546,32 @@ class SlowOther(OtherEffectSpell):
     level = 1
     mp_cost = 1
     range = 20
+    damage_type = "speed"
     projectile_char, projectile_color = '*', c_Cyan
     desc = "Slow the other guy"
 
     def Duration(self, target):
-        return 1000
+        return 100000
 
     def Effect(self, target):
         return SpeedBuff(-90)
+
+class SleepOther(OtherEffectSpell):
+    name = "Sleep Other"
+    shortcut = "sot"
+    harmful = True
+    level = 1
+    mp_cost = 1
+    range = 20
+    damage_type = "sleep"
+    projectile_char, projectile_color = '*', c_Cyan
+    desc = "Make the other guy sleep"
+
+    def Duration(self, target):
+        return 100000
+
+    def Effect(self, target):
+        return SleepOtherBuff()
 
 
 class AgilitySpell(SelfBuffSpell):
@@ -569,7 +610,6 @@ class Teleport(TeleportSpell):
     radius = 999
     desc = lang.spelldesc_teleport
 
-
 class MagicMissile(BoltSpell):
     name = lang.spellname_magic_missile
     shortcut = lang.spellcode_magic_missile
@@ -583,21 +623,6 @@ class MagicMissile(BoltSpell):
 
     def Damage(self, caster):
         return d("1d3")
-
-
-class SleepOther(BoltSpell):
-    name = "Sleep Other"
-    shortcut = "sot"
-    harmful = True
-    level = 1
-    mp_cost = 1
-    range = 20
-    damage_type = "sleep"
-    projectile_char, projectile_color = '*', c_Cyan
-    desc = "Make the other guy sleep"
-
-    def Damage(self, caster):
-        return 0
 
 
 class LightningBolt(BoltSpell):

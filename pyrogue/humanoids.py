@@ -11,11 +11,13 @@ class scruffy_looking_hobbit(Humanoid):
     str, dex, int = 3, 16, 5
     move_speed = 110
     desc = """ An annoying little hobbit."""
-    resists_fire = True
-    immune_electricity = True
-    attacks = [[pyro_items.Punch("1d3", 80), 1],
-               [magic.IceBolt(), 1],
-               [magic.FireBolt(), 1]]
+    wakefulness = 50
+    stealth     = 50
+    fire_resistance = 50
+    ice_resistance = 0
+    electricity_resistance = 100
+    magic_resistance = 50
+    attacks = [[pyro_items.Punch("1d3", 80), 1]]
 
 
 class dark_elf(Humanoid):

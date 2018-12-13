@@ -9,6 +9,33 @@ import magic
 import pprint
 import logging
 
+def TryWakeUp(mover, sleeper):
+    '''
+TODO: all creature moves should trigger this for all
+      nearby mobs
+
+    - creature has a sleep count - starts at 1000
+    - each time something moves near it, decrement sleep count
+        - (20 - distance) * (wakefulness/2*stealth) * 1d20
+    '''
+    distance = calc_distance( mover.x, mover.y, sleeper.x, sleeper.y)
+    if distance > 20:
+        return
+
+    D = 20 - distance
+    w = sleeper.wakefulness
+    s = mover.stealth
+    r = d('1d20')
+    s_orig = sleeper.sleep_count
+
+    x = D * r * w/(s*4)
+
+    sleeper.sleep_count = max(0, sleeper.sleep_count - x)
+
+    logging.debug("D={0}, w={1}, s={2}, r={3}, x={4}, sleep_count={5}".format(D,w,s,r,x,sleeper.sleep_count))
+
+    if s_orig > 0 and sleeper.sleep_count == 0:
+        sleeper.WakeUp()
 
 class Bite(pyro_items.MeleeAttackType):
     ''' Bite Attack '''
@@ -50,10 +77,9 @@ class Berserker(AI):
     def Update(self):
         "Take one action"
         pc = Global.pc
-        if self.mob.is_sleeping:
-            if not self.mob.TryWakeUp():
-                self.mob.Walk(0,0)
-                return
+        if self.mob.sleep_count > 0:
+            self.mob.Walk(0,0)
+            return
         #TODO: Generalize this to follow any mob, not just PC.
         if self.state  == "wander":
             if self.dir  == None:
@@ -165,17 +191,15 @@ class Creature(object):
     can_see_pc = False
     pc_can_see = False
 
-    resists_fire = False
-    resists_ice = False
-    resists_electricity = False
-    immune_fire = False
-    immune_ice = False
-    immune_electricity = False
-
-    # Sleep and Stealth
-    is_sleeping = True
-    wakefulness = 50
+    # resistance and such
+    wakefulness = 20
     stealth     = 20  # 0:100 - higher is stealthier
+    magic_resistance = 20
+    fire_resistance = 0
+    ice_resistance = 0
+    electricity_resistance = 0
+
+
 
     def __init__(self):
         self.effects = []
@@ -188,6 +212,9 @@ class Creature(object):
         self.move_speed = 100
         self.attack_speed = 100
         self.cast_speed = 100
+        # Sleep and Stealth
+        self.sleep_count = 1000
+
         self.hp = self.hp_max
         self.kill_xp = int(max(self.level+1, 1.5 ** self.level))
         if not self.is_pc:
@@ -200,6 +227,52 @@ class Creature(object):
                      'move_speed', 'attack_speed', 'cast_speed', 'kill_xp']:
             d[attr] = getattr(self, attr)
         return d
+
+    def AdjustDamageForEffect(self, amount, damage_type=None, source=None):
+        logging.debug("creature {1} damage_type={0}".format(damage_type, self.name))
+        msg = None
+        if damage_type == 'electricty':
+            if self.electricity_resistance == 100:
+                amount = 0
+                msg = "The {0} is unharmed by elecricty".format(self.name)
+            elif self.electricty_resistance:
+                amount = amount * (self.electricity_resistance/100.)
+                msg = "The {0} resists electricity".format(self.name)
+            else:
+                msg = "The {0} is shocked".format(self.name)
+        elif damage_type == 'ice':
+            if self.ice_resistance == 100:
+                logging.debug("immune ice")
+                amount = 0
+                msg = "The {0} is unharmed by ice".format(self.name)
+            elif self.ice_resistance:
+                logging.debug("resist ice")
+                amount = amount * (self.ice_resistance / 100. )
+                msg = "The {0} resists ice".format(self.name)
+            else:
+                logging.debug("ice full damage")
+                msg = "The {0} is frozen".format(self.name)
+        elif damage_type == 'fire':
+            logging.debug("creature {0} fire resistance = {1}".format(self.name, self.fire_resistance))
+            if self.fire_resistance == 100:
+                amount = 0
+                msg = "The {0} is unharmed by fire".format(self.name)
+                logging.debug("creature immune fire")
+            elif self.fire_resistance > 0:
+                logging.debug("creature partial fire")
+                amount = amount * (self.fire_resistance / 100. )
+                msg = "The {0} resists fire".format(self.name)
+            else:
+                logging.debug("creature full fire")
+                msg = "The {0} is burned".format(self.name)
+        elif damage_type == 'sleep':
+            self.sleep_count = 1000
+            msg = "The {0} is asleep".format(self.name)
+
+        if msg:
+            Global.IO.Message(msg)
+
+        return amount
 
     def Attack(self, target):
         ''' TODO: combine melee item into attacks '''
@@ -359,45 +432,11 @@ class Creature(object):
             return feature
         return None
 
-    def AdjustDamageForEffect(self, amount, damage_type=None, source=None):
-        msg = None
-        if damage_type == 'electricty':
-            if self.immune_electricity:
-                amount = 0
-                msg = "The {0} is unharmed".format(self.name)
-            elif self.resists_electricity:
-                amount -= amount // 2
-                msg = "The {0} resists".format(self.name)
-            else:
-                msg = "The {0} is shocked".format(self.name)
-        elif damage_type == 'ice':
-            if self.immune_ice:
-                amount = 0
-                msg = "The {0} is unharmed".format(self.name)
-            elif self.resists_ice:
-                amount -= amount // 2
-                msg = "The {0} resists".format(self.name)
-            else:
-                msg = "The {0} is frozen".format(self.name)
-        elif damage_type == 'fire':
-            if self.immune_fire:
-                amount = 0
-                msg = "The {0} is unharmed".format(self.name)
-            elif self.resists_fire:
-                amount -= amount // 2
-                msg = "The {0} resists".format(self.name)
-            else:
-                msg = "The {0} is burned".format(self.name)
-        elif damage_type == 'sleep':
-            self.is_sleeping = True
-            msg = "The {0} falls asleep".format(self.name)
-        if msg:
-            Global.IO.Message(msg)
 
-        return amount
 
     def TakeDamage(self, amount, damage_type=None, source=None):
-        if self.is_sleeping:
+        logging.debug("TakeDamage, type={0}".format(damage_type))
+        if self.sleep_count:
             self.WakeUp()
         # This method can be overridden for special behavior (fire heals elemental, etc)
         self.AdjustDamageForEffect(amount, damage_type, source)
@@ -410,6 +449,27 @@ class Creature(object):
                 Global.pc.GainXP(self.kill_xp)
 
         return amount
+
+    def ResistMagic(self, caster, effect):
+        '''
+        caster level
+        caster magic power
+        level
+        resists_fire
+        immune_fire
+        magic_resistance
+        '''
+        cl = caster.level
+        tl = self.level
+        d1 = cl * d('1d20')
+        d2 = tl * d('1d20')
+        logging.debug('cl: {0}, t1: {1}, d1: {2}, d2: {3}'.format(cl, tl, d1, d2))
+        if d1 > d2:
+            logging.debug('no resist')
+            return False
+        else:
+            logging.debug('resist')
+            return True
 
     def TakeEffect(self, new_effect, duration):
         "Apply a temporary or permanent effect to the creature."
@@ -427,30 +487,37 @@ class Creature(object):
             new_effect.Apply(self)
             self.effects.append(new_effect)
 
-    def TryWakeUp(self):
-        '''
-        takes into account:
-            distance to pc
-            pc stealth
-            mob wakefulness
-            roll
-        we want:
-            if player stealth low, high chance of wake up regardless
-            if mob wakefulness high, high chance of wake up, but stealth overrides
-            it should be about 10x harder at distance of 20 than at distance of 1
-        '''
-        pc = Global.pc
-        distance_to_pc = calc_distance( pc.x, pc.y, self.x, self.y)
-        if distance_to_pc > 20:
-            return False
-        roll = d('1d20')
-        #ans = 0.5/(np.arange(1,20,1)) * 50/(50 * 4))
-        ans = (0.5/distance_to_pc) * (self.wakefulness*roll/(pc.stealth))
-        logging.debug("pc.stealth={0}, distance_to_pc = {1}, wakefulness={4}, roll = {2}, ans={3}".format( pc.stealth, distance_to_pc, roll, ans, self.wakefulness))
-        if ans > 1:
-            self.WakeUp()
-            return True
-        return False
+#    def TryWakeUp(self):
+#        '''
+#    TODO: all creature moves should trigger this for all
+#          nearby mobs
+#
+#        - creature has a sleep count - starts at 1000
+#        - each time something moves near it, decrement sleep count
+#            - (20 - distance) * (wakefulness/2*stealth) * 1d20
+#        '''
+#        pc = Global.pc
+#        distance_to_pc = calc_distance( pc.x, pc.y, self.x, self.y)
+#        if distance_to_pc > 20:
+#            return False
+#
+#        D = 20 - distance_to_pc
+#        w = self.wakefulness
+#        s = pc.stealth
+#        r = d('1d20')
+#        s_orig = self.sleep_count
+#
+#        x = D * r * w/(s*2)
+#
+#        self.sleep_count = max(0, self.sleep_count - x)
+#
+#        logging.debug("D={0}, w={1}, s={2}, r={3}, x={4}, sleep_count={5}".format(D,w,s,r,x,self.sleep_count))
+#
+#        if s_orig > 0 and self.sleep_count == 0:
+#            self.WakeUp()
+#            return True
+#
+#        return False
 
     def Log(self):
         logging.debug(self)
@@ -492,12 +559,18 @@ class Creature(object):
             self.effects.remove(e)
         # TODO: add item updates too, once that type of effect exists
 
+    def MakeNoise(self):
+        for mob in self.current_level.CreaturesInRange(self.x, self.y, 20):
+            if mob.sleep_count > 0:
+                TryWakeUp(self, mob)
+
     def Walk(self, dx, dy):
         "Try to move the specified amounts."
         msg = ""
         if dx  == dy == 0:
             self.Delay(self.move_speed)
             return True, msg
+        self.MakeNoise()
         blocker = self.SquareBlocked(self.x+dx, self.y+dy)
         if blocker:
             if not self.free_motion or isinstance(blocker, Creature) or blocker  == OUTSIDE_LEVEL:
@@ -515,7 +588,12 @@ class Creature(object):
     def WakeUp(self):
         logging.debug("WakeUp")
         Global.IO.Message("The {0} wakes up".format(self.name))
-        self.is_sleeping = False
+        self.sleep_count = 0
+
+    def FallAsleep(self):
+        logging.debug("Fall Asleep")
+        Global.IO.Message("The {0} falls alseep".format(self.name))
+        self.sleep_count = 1000
 
     def Wield(self, item):
         "Wield the item as a melee weapon."

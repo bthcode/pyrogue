@@ -58,13 +58,16 @@ class PlayerCharacter(creatures.Humanoid):
         self.archetype.hp, self.archetype.mp = self.stats(
             "str"), max(0, self.stats("int") - 7)
         self.hp_max, self.mp_max = self.archetype.hp, self.archetype.mp
-        self.immune_electricity = self.archetype.immune_electricity
-        self.resists_electricity = self.archetype.resists_electricity
-        self.immune_ice = self.archetype.immune_ice
-        self.resists_ice = self.archetype.resists_ice
-        self.immune_fire = self.archetype.immune_fire
-        self.resists_fire = self.archetype.resists_fire
-        # number of gains needed to go up a notch
+        self.sleep_count = 0
+
+        # resistance and such
+        self.wakefulness = self.archetype.wakefulness
+        self.stealth     = self.archetype.stealth
+        self.fire_resitance = self.archetype.fire_resistance
+        self.ice_resistance = self.archetype.ice_resistance
+        self.electricity_resistance = self.archetype.electricity_resistance
+        self.magic_resistance = self.archetype.magic_resistance
+       # number of gains needed to go up a notch
         self.gain_str, self.gain_dex, self.gain_int = 1, 1, 1
         self.hp, self.mp = self.hp_max, self.mp_max
         self.move_speed = 100
@@ -666,41 +669,42 @@ class PlayerCharacter(creatures.Humanoid):
         logging.debug("damage_type={0}".format(damage_type))
         msg = None
         if damage_type == 'electricty':
-            if self.immune_electricity:
+            if self.electricity_resistance == 100:
                 amount = 0
                 msg = "You are unharmed by elecricty"
-            elif self.resists_electricity:
-                amount -= amount // 2
+            elif self.electricty_resistance:
+                amount = amount * (self.electricity_resistance/100.)
                 msg = "You resist electricity"
             else:
                 msg = "You are shocked"
         elif damage_type == 'ice':
-            if self.immune_ice:
+            if self.ice_resistance == 100:
                 logging.debug("immune ice")
                 amount = 0
                 msg = "You are unharmed by ice"
-            elif self.resists_ice:
+            elif self.ice_resistance:
                 logging.debug("resist ice")
-                amount -= amount // 2
+                amount = amount * (self.ice_resistance / 100. )
                 msg = "You resist ice"
             else:
                 logging.debug("ice full damage")
                 msg = "You are frozen"
         elif damage_type == 'fire':
-            if self.immune_fire:
+            if self.fire_resistance == 100:
                 amount = 0
                 msg = "You are unharmed by fire"
-            elif self.resists_fire:
-                amount -= amount // 2
+            elif self.fire_resistance:
+                amount = amount * (self.fire_resistance / 100. )
                 msg = "You resist fire"
             else:
                 msg = "You are burned"
         elif damage_type == 'sleep':
-            self.is_asleep = True
+            self.sleep_count = 1000
             msg = "You are asleep"
+            logging.debug("you are asleep")
 
-        #if msg:
-        #    Global.IO.Message(msg)
+        if msg:
+            Global.IO.Message(msg)
 
         return amount
 
@@ -708,6 +712,11 @@ class PlayerCharacter(creatures.Humanoid):
         amount = self.AdjustDamageForEffect(amount,damage_type,source)
         self.hp -= amount
         return amount
+
+    def WakeUp(self):
+        logging.debug("WakeUp")
+        Global.IO.Message("You wake up")
+        self.sleep_count = 0
 
     def Throw(self):
         pass
@@ -766,7 +775,11 @@ class PlayerCharacter(creatures.Humanoid):
             self.GainLevel()
         # Finalize display:
         Global.IO.EndTurn()
-        if self.running:
+        if self.sleep_count > 0:
+            Global.IO.Message("You are asleep")
+            Global.IO.BeginTurn()
+            self.Walk(0,0)
+        elif self.running:
             # If autorunning, don't ask for a command:
             self.AutoRun()
         elif self.resting:
@@ -795,6 +808,11 @@ class PlayerCharacter(creatures.Humanoid):
                 pass
             if not self.tab_targeting:
                 Global.IO.tab_targeting = False
+
+    def FallAsleep(self):
+        logging.debug("Fall Asleep")
+        Global.IO.Message("You fall alseep".format(self.name))
+        self.sleep_count = 1000
 
     def UseStairs(self, action):
         if self.free_motion:
@@ -1036,9 +1054,14 @@ class DisElf(Archetype):
         armor = pyro_items.random_armor(-2, pyro_items.Jerkin, nospecial=True)
         pc.inventory.Pickup(armor)
         pc.Equip(armor, silent=True)
-        self.resists_fire = True
-        self.immune_ice = True
+        self.fire_resistance = 100
+        self.ice_resistance = 80
+        self.electricity_resistance = 0
         self.stealth = 100
+        self.wakefulness = 10
+        self.magic_resistance = 20
+
+
         weapon = pyro_items.random_melee_weapon(
             0, pyro_items.Dagger, nospecial=True)
         pc.inventory.Pickup(weapon)
