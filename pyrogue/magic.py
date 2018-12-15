@@ -521,6 +521,33 @@ class SpeedBuff(Buff):
                 Global.IO.Message(lang.effect_speed_buff_gone_mob %
                                   lang.ArticleName("The", target))
 
+
+class ConfuseOtherBuff(Buff):
+    name = "Confusion"
+
+    def __init__(self, amount=1, desc="Confusion"):
+        self.amount, self.desc = amount, desc
+
+    def Apply(self, target, silent=False):
+        logging.debug("Confuse Buf Apply")
+        target.is_confused = True
+        if not silent:
+            if target is Global.pc:
+                Global.IO.Message("You are confused")
+            elif target.pc_can_see:
+                Global.IO.Message("The {0} is confused".format(target.name))
+
+    def Remove(self, target, silent=False):
+        logging.debug("Speed Buf Remove")
+        target.is_confused = False
+        if not silent:
+            if target is Global.pc:
+                Global.IO.Message("You are no longer confused")
+            elif target.pc_can_see:
+                Global.IO.Message("The {0} is no longer confused".format(target.name))
+
+
+
 class SleepOtherBuff(Buff):
     name = "Sleep"
 
@@ -555,6 +582,26 @@ class SlowOther(OtherEffectSpell):
 
     def Effect(self, target):
         return SpeedBuff(-90)
+
+
+
+class ConfuseOther(OtherEffectSpell):
+    name = "Confuse Other"
+    shortcut = "cot"
+    harmful = True
+    level = 1
+    mp_cost = 1
+    range = 20
+    damage_type = "confusion"
+    projectile_char, projectile_color = '*', c_Cyan
+    desc = "Confuse the other guy"
+
+    def Duration(self, target):
+        return 1000
+
+    def Effect(self, target):
+        return ConfuseOtherBuff()
+
 
 class SleepOther(OtherEffectSpell):
     name = "Sleep Other"

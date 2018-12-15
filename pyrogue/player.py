@@ -79,6 +79,8 @@ class PlayerCharacter(creatures.Humanoid):
         self.old_fov, self.new_fov = set(), set()
         self.target = None
         self.current_level = None
+        # Confusion
+        self.is_confused = False
 
     def AdjacentPassableSquares(self):
         "Return a list of adjacent squares the player can move into."
@@ -185,6 +187,9 @@ class PlayerCharacter(creatures.Humanoid):
                 self.run_in_room = True
 
     def CastSpell(self):
+        if self.is_confused:
+            Global.IO.Message("You are too confused for magic")
+            return
         spell = Global.IO.GetSpell()
         if spell:
             spell.Cast(self)
@@ -1080,6 +1085,7 @@ class DisElf(Archetype):
         pc.spells.append(magic.Teleport())
         pc.spells.append(magic.SlowOther())
         pc.spells.append(magic.SleepOther())
+        pc.spells.append(magic.ConfuseOther())
 
 
 class KrolHuman(Archetype):

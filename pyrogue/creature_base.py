@@ -8,6 +8,7 @@ import astar
 import magic
 import pprint
 import logging
+import random
 
 def TryWakeUp(mover, sleeper):
     '''
@@ -119,7 +120,7 @@ class Berserker(AI):
                     self.state = "wander"
                     return
             # We can see the PC, but are not in melee range: use A*:
-            path = astar.path(self.mob.x, self.mob.y, self.tx, self.ty, 
+            path = astar.path(self.mob.x, self.mob.y, self.tx, self.ty,
                               self.mob.PathfindPass, max_length = 10)
             if path:
                 dx, dy = path[0][0] - self.mob.x, path[0][1] - self.mob.y
@@ -215,6 +216,8 @@ class Creature(object):
         # Sleep and Stealth
         self.sleep_count = 1000
 
+        # Confusion
+        self.is_confused = False
         self.hp = self.hp_max
         self.kill_xp = int(max(self.level+1, 1.5 ** self.level))
         if not self.is_pc:
@@ -275,14 +278,17 @@ class Creature(object):
         return amount
 
     def Attack(self, target):
-        ''' TODO: combine melee item into attacks '''
+        ''' TODO: combine melee item into attacks
+            TODO: factor confusion in'''
         range_to_target = calc_distance(self.x, self.y, target.x, target.y)
         attacks = [ x for x in self.attacks if x[0].range >= range_to_target ]
         if not len(attacks):
             self.Delay(self.move_speed)
             return
         attack = weighted_choice(attacks)
-        if isinstance(attack, magic.Spell):
+        if isinstance(attack, magic.Spell) and self.is_confused:
+            Global.IO.Message("The {0} tries to cast a spell, but is confused".format(self.name))
+        elif isinstance(attack, magic.Spell):
             attack.Attempt(self, target)
             self.Delay(self.cast_speed)
         else:
@@ -362,7 +368,10 @@ class Creature(object):
         except IndexError:
             # Nothing is wielded.  Maybe include some monk/karate bonus here someday.
             weapon_bonus = 0
-        return dex_bonus + weapon_bonus
+        confusion_factor = 0
+        if self.is_confused:
+            confusion_factor = -8
+        return dex_bonus + weapon_bonus + confusion_factor
 
     def MissileHitBonus(self):
         # For now it's the same as melee:
@@ -570,6 +579,10 @@ class Creature(object):
         if dx  == dy == 0:
             self.Delay(self.move_speed)
             return True, msg
+        if self.is_confused:
+            dx = dx * random.choice([-1,1])
+            dy = dy * random.choice([-1,1])
+
         self.MakeNoise()
         blocker = self.SquareBlocked(self.x+dx, self.y+dy)
         if blocker:
