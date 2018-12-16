@@ -17,8 +17,8 @@ class scruffy_looking_hobbit(Humanoid):
     ice_resistance = 0
     electricity_resistance = 100
     magic_resistance = 50
-    attacks = [[pyro_items.Punch("1d3", 80), 10],
-               [magic.ConfuseOther(), 1]]
+    attacks = [[pyro_items.Punch("1d3", 80), 1],
+               [magic.SlowOther(), 1]]
 
 
 class dark_elf(Humanoid):

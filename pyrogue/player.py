@@ -73,6 +73,7 @@ class PlayerCharacter(creatures.Humanoid):
         self.move_speed = 100
         self.attack_speed = 100
         self.cast_speed = 100
+        self.magic_speed_modifier = 0
 #        self.protection, self.evasion = 0, 0
         self.GainLevel()    # Gain level 1
         self.running, self.resting = False, False

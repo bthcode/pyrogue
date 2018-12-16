@@ -1151,15 +1151,25 @@ class IOWrapper(object):
         line = "%s  %s%s  %s  %s" % (stats, hp, mp, armor, dlvl)
         status_lines = []
         status_lines.append(line)
+
+        # Effects
+        is_confused = p.is_confused
+        speed       = p.GetMoveSpeed()
         if Global.pc.target:
             target = Global.pc.target.Name().title()
             target_color = "^Y^"
         else:
             target = lang.word_none.title()
             target_color = "^0^"
-        line = "%s: %s%s^0^" % (lang.word_target.title(), target_color, target)
+        if speed < 100:
+            speed = '^R^' + str(speed)
+        effects_string = 'Speed: {0}'.format(speed)
+        if is_confused:
+            effects_string += ' ^R^confused'
+        line = "%s: %s%s^0^ %s" % (lang.word_target.title(), target_color, target, effects_string)
         status_lines.append(line)
         self.set_status(status_lines)
+
 
     def Shutdown(self):
         "Shut down the IO system."

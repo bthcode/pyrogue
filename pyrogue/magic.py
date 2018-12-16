@@ -9,7 +9,7 @@ class Spell(object):
     def AfterCast(self, caster):
         "Called after the spell is finished casting."
         caster.mp -= self.mp_cost
-        caster.Delay(caster.cast_speed)
+        caster.Delay(caster.GetCastSpeed())
 
     def CanCast(self, caster):
         if caster.mp < self.mp_cost:
@@ -492,13 +492,7 @@ class SpeedBuff(Buff):
         self.amount, self.desc = amount, desc
 
     def Apply(self, target, silent=False):
-        logging.debug("Speed Buf Apply target={0}:{1}".format(
-            target, target.move_speed))
-        target.move_speed = max(1, target.move_speed + self.amount)
-        target.attack_speed = max(1, target.attack_speed + self.amount)
-        target.cast_speed = max(1, target.cast_speed + self.amount)
-        logging.debug("Speed Buf Apply target={0}:{1}".format(
-            target, target.move_speed))
+        target.ChangeSpeed(self.amount)
         if not silent:
             if target is Global.pc:
                 Global.IO.Message(lang.effect_speed_buff_you)
@@ -507,13 +501,7 @@ class SpeedBuff(Buff):
                                   lang.ArticleName("The", target))
 
     def Remove(self, target, silent=False):
-        logging.debug("Speed Buf Remove target={0}:{1}".format(
-            target, target.move_speed))
-        target.move_speed -= self.amount
-        target.attack_speed -= self.amount
-        target.cast_speed -= self.amount
-        logging.debug("Speed Buf Remove target={0}:{1}".format(
-            target, target.move_speed))
+        target.ChangeSpeed(-self.amount)
         if not silent:
             if target is Global.pc:
                 Global.IO.Message(lang.effect_speed_buff_gone_you)
@@ -578,10 +566,10 @@ class SlowOther(OtherEffectSpell):
     desc = "Slow the other guy"
 
     def Duration(self, target):
-        return 100000
+        return 10000
 
     def Effect(self, target):
-        return SpeedBuff(-90)
+        return SpeedBuff(-50)
 
 
 

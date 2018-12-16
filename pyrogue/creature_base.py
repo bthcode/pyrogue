@@ -200,8 +200,6 @@ class Creature(object):
     ice_resistance = 0
     electricity_resistance = 0
 
-
-
     def __init__(self):
         self.effects = []
         self.equipped, self.unequipped = [], []   # By default, no equip slots
@@ -215,6 +213,7 @@ class Creature(object):
         self.cast_speed = 100
         # Sleep and Stealth
         self.sleep_count = 1000
+        self.magic_speed_modifier = 0
 
         # Confusion
         self.is_confused = False
@@ -283,14 +282,14 @@ class Creature(object):
         range_to_target = calc_distance(self.x, self.y, target.x, target.y)
         attacks = [ x for x in self.attacks if x[0].range >= range_to_target ]
         if not len(attacks):
-            self.Delay(self.move_speed)
+            self.Delay(self.GetMoveSpeed())
             return
         attack = weighted_choice(attacks)
         if isinstance(attack, magic.Spell) and self.is_confused:
             Global.IO.Message("The {0} tries to cast a spell, but is confused".format(self.name))
         elif isinstance(attack, magic.Spell):
             attack.Attempt(self, target)
-            self.Delay(self.cast_speed)
+            self.Delay(self.GetCastSpeed())
         else:
             success = attack.Attempt(self, target)
 
@@ -333,6 +332,18 @@ class Creature(object):
     def FailedMove(self, mob):
         # Something tried to move onto the mob; initiate an attack:
         mob.TryAttack(self)
+
+    def ChangeSpeed(self, amount):
+        self.magic_speed_modifier = self.magic_speed_modifier + amount
+
+    def GetAttackSpeed(self):
+        return min(max(50, self.attack_speed + self.magic_speed_modifier), 200)
+
+    def GetMoveSpeed(self):
+        return min(max(50, self.move_speed + self.magic_speed_modifier), 200)
+
+    def GetCastSpeed(self):
+        return min(max(50, self.cast_speed + self.magic_speed_modifier), 200)
 
     def Heal(self, amount):
         "Heal the creature for the given amount."
@@ -577,7 +588,7 @@ class Creature(object):
         "Try to move the specified amounts."
         msg = ""
         if dx  == dy == 0:
-            self.Delay(self.move_speed)
+            self.Delay(self.GetMoveSpeed())
             return True, msg
         if self.is_confused:
             dx = dx * random.choice([-1,1])
@@ -595,7 +606,7 @@ class Creature(object):
                     pass
                 return False, msg
         self.current_level.MoveCreature(self, self.x + dx, self.y + dy)
-        self.Delay(self.move_speed)
+        self.Delay(self.GetMoveSpeed())
         return True, ""
 
     def WakeUp(self):
