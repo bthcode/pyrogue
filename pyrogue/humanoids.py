@@ -11,12 +11,12 @@ class scruffy_looking_hobbit(Humanoid):
     str, dex, int = 3, 16, 5
     move_speed = 110
     desc = """ An annoying little hobbit."""
-    wakefulness = 50
+    wakefulness = 10
     stealth     = 50
     fire_resistance = 50
     ice_resistance = 0
     electricity_resistance = 100
-    magic_resistance = 50
+    magic_resistance = 10
     attacks = [[pyro_items.Punch("1d3", 80), 1],
                [magic.SlowOther(), 1]]
 

@@ -33,8 +33,6 @@ TODO: all creature moves should trigger this for all
 
     sleeper.sleep_count = max(0, sleeper.sleep_count - x)
 
-    logging.debug("D={0}, w={1}, s={2}, r={3}, x={4}, sleep_count={5}".format(D,w,s,r,x,sleeper.sleep_count))
-
     if s_orig > 0 and sleeper.sleep_count == 0:
         sleeper.WakeUp()
 
@@ -196,9 +194,11 @@ class Creature(object):
     wakefulness = 20
     stealth     = 20  # 0:100 - higher is stealthier
     magic_resistance = 20
+    magic_power = 10
     fire_resistance = 0
     ice_resistance = 0
     electricity_resistance = 0
+
 
     def __init__(self):
         self.effects = []
@@ -432,6 +432,28 @@ class Creature(object):
             # It wasn't there.
             pass
 
+    def RemoveConfusion(self):
+        still_confused = False
+        for e in self.effects:
+            logging.debug(type(e))
+            if type(e) is magic.ConfuseOtherBuff:
+                still_confused = True
+        self.is_confsued = still_confused
+
+    def ResistMagic(self, caster, effect):
+        '''
+        '''
+        d1 = d('1d{0}'.format(caster.magic_power))
+        d2 = d('1d{0}'.format(self.magic_resistance))
+        logging.debug("caster.magic_power={}, d1={}, self.magic_resistance={}, d2={}".format(
+                       caster.magic_power, d1, self.magic_resistance, d2))
+        if d1 > d2:
+            logging.debug('no resist')
+            return False
+        else:
+            logging.debug('resist')
+            return True
+
     def SquareBlocked(self, x, y):
         "Return the first thing, if any, blocking the square."
         L = self.current_level
@@ -453,7 +475,6 @@ class Creature(object):
         return None
 
 
-
     def TakeDamage(self, amount, damage_type=None, source=None):
         logging.debug("TakeDamage, type={0}".format(damage_type))
         if self.sleep_count:
@@ -469,27 +490,6 @@ class Creature(object):
                 Global.pc.GainXP(self.kill_xp)
 
         return amount
-
-    def ResistMagic(self, caster, effect):
-        '''
-        caster level
-        caster magic power
-        level
-        resists_fire
-        immune_fire
-        magic_resistance
-        '''
-        cl = caster.level
-        tl = self.level
-        d1 = cl * d('1d20')
-        d2 = tl * d('1d20')
-        logging.debug('cl: {0}, t1: {1}, d1: {2}, d2: {3}'.format(cl, tl, d1, d2))
-        if d1 > d2:
-            logging.debug('no resist')
-            return False
-        else:
-            logging.debug('resist')
-            return True
 
     def TakeEffect(self, new_effect, duration):
         "Apply a temporary or permanent effect to the creature."

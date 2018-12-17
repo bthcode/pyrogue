@@ -62,11 +62,18 @@ class PlayerCharacter(creatures.Humanoid):
 
         # resistance and such
         self.wakefulness = self.archetype.wakefulness
-        self.stealth     = self.archetype.stealth
-        self.fire_resitance = self.archetype.fire_resistance
-        self.ice_resistance = self.archetype.ice_resistance
-        self.electricity_resistance = self.archetype.electricity_resistance
-        self.magic_resistance = self.archetype.magic_resistance
+        self.magic_bonus = self.archetype.magic_bonus # character / race based
+        self.attack_bonus = self.archetype.attack_bonus # character / race based
+        self.stealth_bonus = self.archetype.stealth_bonus
+        self.stealth = 0
+        self.magic_resistance = 0
+        self.magic_power = 0
+
+
+        self.fire_resitance = 0
+        self.ice_resistance = 0
+        self.electricity_resistance = 0
+
        # number of gains needed to go up a notch
         self.gain_str, self.gain_dex, self.gain_int = 1, 1, 1
         self.hp, self.mp = self.hp_max, self.mp_max
@@ -76,6 +83,7 @@ class PlayerCharacter(creatures.Humanoid):
         self.magic_speed_modifier = 0
 #        self.protection, self.evasion = 0, 0
         self.GainLevel()    # Gain level 1
+        self.SetPlayerBonuses()
         self.running, self.resting = False, False
         self.old_fov, self.new_fov = set(), set()
         self.target = None
@@ -734,6 +742,34 @@ class PlayerCharacter(creatures.Humanoid):
         Global.IO.Message(lang.saving_game.format(self.name + '.pkl'))
         Global.pyro.Save(self.name + '.pkl')
 
+    def SetPlayerBonuses(self):
+        dex = self.stats("dex")
+        if dex < 10:
+            dex_bonus = 0
+        elif dex >= 10 and dex < 14:
+            dex_bonus = 1
+        elif dex >= 15:
+            dex_bonus = 2 + (dex - 15)
+
+        intelligence = self.stats("int")
+        logging.debug("intelligence={0}".format(intelligence))
+        if intelligence < 10:
+            intelligence_bonus = 0
+        elif intelligence >= 10 and intelligence < 15:
+            intelligence_bonus = 1
+        elif intelligence >= 15:
+            intelligence_bonus = 2 + (intelligence-15)
+
+        lvl_bonus = self.level / 2
+
+        self.stealth = int(min(lvl_bonus * (self.stealth_bonus + dex_bonus), 100))
+        self.magic_resistance = int(min(lvl_bonus * (self.magic_bonus + intelligence_bonus/2 + dex_bonus/2), 100))
+        self.magic_power = int(min(lvl_bonus * (self.magic_bonus + intelligence_bonus), 100))
+
+        logging.debug("level={0}, dex={1}, int={2} lvl_bonus={3}, dex_bonus={4}, int_bonus={5}, stealth={6}, magic_resistance={7}, magic_power={8}".format(
+                        self.level, dex, intelligence, lvl_bonus, dex_bonus, intelligence_bonus, self.stealth, self.magic_resistance, self.magic_power))
+
+
     def Update(self):
         "Called each turn; get the player's action and execute it."
         self.UpdateEffects()
@@ -779,6 +815,7 @@ class PlayerCharacter(creatures.Humanoid):
         # See if the player has enough xp to gain a level:
         if self.xp >= self.xp_for_next_level:
             self.GainLevel()
+            self.SetPlayerBonuses()
         # Finalize display:
         Global.IO.EndTurn()
         if self.sleep_count > 0:
@@ -1060,20 +1097,24 @@ class DisElf(Archetype):
         armor = pyro_items.random_armor(-2, pyro_items.Jerkin, nospecial=True)
         pc.inventory.Pickup(armor)
         pc.Equip(armor, silent=True)
-        self.fire_resistance = 100
-        self.ice_resistance = 80
-        self.electricity_resistance = 0
-        self.stealth = 100
-        self.wakefulness = 10
-        self.magic_resistance = 20
 
+        #self.fire_resistance = 0
+        #self.ice_resistance = 0
+        #self.electricity_resistance = 0
+        #self.stealth = 20
+        #self.magic_resistance = 20
+
+        self.wakefulness = 20
+        self.magic_bonus = 3
+        self.attack_bonus = 1
+        self.stealth_bonus = 3
 
         weapon = pyro_items.random_melee_weapon(
             0, pyro_items.Dagger, nospecial=True)
         pc.inventory.Pickup(weapon)
         pc.Equip(weapon, silent=True)
         Archetype.__init__(self, pc)
-        pc.stats = creatures.Stats(7, 7, 10)
+        pc.stats = creatures.Stats(8, 12, 14) # str, dex, int
         self.stat_gains = ['int', 'any']
         pc.spells.append(magic.AgilitySpell())
         pc.spells.append(magic.LightningBolt())

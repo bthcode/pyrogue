@@ -527,7 +527,7 @@ class ConfuseOtherBuff(Buff):
 
     def Remove(self, target, silent=False):
         logging.debug("Speed Buf Remove")
-        target.is_confused = False
+        target.RemoveConfusion()
         if not silent:
             if target is Global.pc:
                 Global.IO.Message("You are no longer confused")
